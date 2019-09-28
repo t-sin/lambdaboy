@@ -5,6 +5,7 @@
 
 (defstruct cpu
   ;;; internal states
+  halted?  ; TBD
 
   ;;; registers
   ;;; this would be changed
@@ -27,4 +28,7 @@
   iy  ; index register #2
   sp  ; stack pointer
   pc  ; program counter
+
+  ;;; memory
+  mem
 )
