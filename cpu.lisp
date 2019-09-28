@@ -47,6 +47,8 @@
 
 (defun make-cpu* ()
   (make-cpu
+   mem nil
+   halted? nil
    :a 0 :f 0
    :b 0 :c 0 :d 0 :e 0 :h 0 :l 0
    :a* 0 :f* 0
@@ -55,4 +57,7 @@
 
 (defun run (cpu)
   (loop
-    (format t "pc: ~a~%" (cpu-pc cpu))))
+    :for n := 0 :then (incf n)
+    :until (cpu-halted? cpu)
+    :when (= n 100) :do (setf (cpu-halted? cpu) t)
+    :do (format t "pc: ~a~%" (cpu-pc cpu))))
