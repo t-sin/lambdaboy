@@ -55,9 +55,12 @@
    :b* 0 :c* 0 :d* 0 :e* 0 :h* 0 :l* 0
    :i 0 :r 0 :ix 0 :iy 0 :sp 0 :pc 0))
 
+(defun run-1 (cpu)
+  (format t "pc: ~a~%" (cpu-pc cpu)))
+
 (defun run (cpu)
   (loop
     :for n := 0 :then (incf n)
     :until (cpu-halted? cpu)
     :when (= n 100) :do (setf (cpu-halted? cpu) t)
-    :do (format t "pc: ~a~%" (cpu-pc cpu))))
+    :do (run-1 cpu)))
