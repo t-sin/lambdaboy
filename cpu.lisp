@@ -12,6 +12,10 @@
 (defgeneric mem-setw (m addr))
 (defgeneric mem-getw (m addr w))
 
+(defclass rom (memory)
+  ((array :initarg :array
+          :type (simple-vector (unsigned-byte 8)))))
+
 (defclass memory-map (memory)
   (map))
 
@@ -59,8 +63,10 @@
   (format t "pc: ~a~%" (cpu-pc cpu)))
 
 (defun run (cpu)
+  (setf (cpu-mem cpu)
+        (make-instance 'rom :array (make-array 100 :initial-element 0)))
   (loop
-    :for n := 0 :then (incf n)
+    :for cycle := 0 :then (incf cycle)
     :until (cpu-halted? cpu)
-    :when (= n 100) :do (setf (cpu-halted? cpu) t)
+    :when (= cycle 5) :do (setf (cpu-halted? cpu) t)
     :do (run-1 cpu)))
