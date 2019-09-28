@@ -3,6 +3,17 @@
   (:export))
 (in-package #:lambdaboy.cpu)
 
+(defclass memory ())
+
+(defgeneric mem-set (m addr))
+(defgeneric mem-get (m addr v))
+
+(defgeneric mem-setw (m addr))
+(defgeneric mem-getw (m addr w))
+
+(defclass memory-map (memory)
+  map)
+
 (defstruct cpu
   ;;; internal states
   halted?  ; TBD
@@ -32,3 +43,15 @@
   ;;; memory
   mem
 )
+
+(defun make-cpu* ()
+  (make-cpu
+   :a 0 :f 0
+   :b 0 :c 0 :d 0 :e 0 :h 0 :l 0
+   :a* 0 :f* 0
+   :b* 0 :c* 0 :d* 0 :e* 0 :h* 0 :l* 0
+   :i 0 :r 0 :ix 0 :iy 0 :sp 0 :pc 0))
+
+(defun run (cpu)
+  (loop
+    cpu))
