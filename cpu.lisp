@@ -1,7 +1,7 @@
-(defpackage #:lambdaboy.cpu
+(defpackage #:lambdaboy
   (:use #:cl)
   (:export))
-(in-package #:lambdaboy.cpu)
+(in-package #:lambdaboy)
 
 (defclass memory ()
   ())
