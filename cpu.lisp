@@ -3,7 +3,8 @@
   (:export))
 (in-package #:lambdaboy.cpu)
 
-(defclass memory ())
+(defclass memory ()
+  ())
 
 (defgeneric mem-set (m addr))
 (defgeneric mem-get (m addr v))
@@ -12,7 +13,7 @@
 (defgeneric mem-getw (m addr w))
 
 (defclass memory-map (memory)
-  map)
+  (map))
 
 (defstruct cpu
   ;;; internal states
@@ -54,4 +55,4 @@
 
 (defun run (cpu)
   (loop
-    cpu))
+    (format t "pc: ~a~%" (cpu-pc cpu))))
