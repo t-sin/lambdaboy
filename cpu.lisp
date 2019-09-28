@@ -47,8 +47,8 @@
 
 (defun make-cpu* ()
   (make-cpu
-   mem nil
-   halted? nil
+   :mem nil
+   :halted? nil
    :a 0 :f 0
    :b 0 :c 0 :d 0 :e 0 :h 0 :l 0
    :a* 0 :f* 0
