@@ -1,3 +1,4 @@
-# LambdaBoy
+# LambdaBoy - a GameBoy-thing
 
-LambdaBoy is an emulator; Z80 finally towards GameBoy.
+LambdaBoy is an emulator or something.
+
