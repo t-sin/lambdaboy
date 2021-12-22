@@ -1,4 +1,4 @@
-# LambdaBoy - a GameBoy-thing
+# LambdaBoy
 
 LambdaBoy is an emulator or something.
 
