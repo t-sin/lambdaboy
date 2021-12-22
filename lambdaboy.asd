@@ -1,5 +1,5 @@
 (defsystem :lambdaboy
-  :author "TANAKA Shinichi"
+  :author "Shinichi Tanaka"
   :version "0.0.0"
-  :description "Z80 emulator towards GameBoy"
-  :components ((:file "cpu")))
+  :description "GameBoy-thing"
+  :components ((:file "lambdaboy")))
