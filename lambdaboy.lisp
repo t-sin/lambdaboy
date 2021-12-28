@@ -124,7 +124,8 @@
 
 (defstruct memory-block
   (range nil :type range)
-  (array nil :type (array (unsigned-byte 16))))
+  (array nil :type (array (unsigned-byte 16)))
+  (write-hook nil :type function))
 
 (defstruct (memory (:constructor make-memory*))
   (map (vector) :type (vector memory-block)))
@@ -139,10 +140,13 @@
              (memory-block-range block)
              (map 'list (lambda (b) (memory-block-range b)) (memory-map mem)))))
 
-(defun map-memory* (mem s e)
-  (let ((block (make-memory-block :range (make-range :start s :end e)
-                                  :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 16)))))
-    (map-memory mem block)))
+(flet ((do-nothing (addr val)
+         (declare (ignore addr val))))
+  (defun map-memory* (mem s e &optional (fn #'do-nothing))
+    (let ((block (make-memory-block :range (make-range :start s :end e)
+                                    :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 16))
+                                    :write-hook fn)))
+      (map-memory mem block))))
 
 (defun find-block (mem addr)
   (loop
@@ -159,13 +163,14 @@
 (defun (setf memory-address) (val mem addr)
   (let ((b (find-block mem addr)))
     (when b
-      (setf (aref (memory-block-array b)
-                  (- addr (range-start (memory-block-range b))))
-            val))))
+      (let ((offset (- addr (range-start (memory-block-range b)))))
+        (when (memory-block-write-hook b)
+          (funcall (memory-block-write-hook b) offset val))
+        (setf (aref (memory-block-array b) offset) val)))))
 
 (defun make-memory ()
   (let ((mem (make-memory*)))
-    (map-memory* mem #x0000 #x3fff)
+    (map-memory* mem #x0000 #x3fff (lambda (addr val) (format t "write ~a at ~a" val addr)))
     (map-memory* mem #x4000 #x7fff)
     (map-memory* mem #x8000 #x9fff)
     (map-memory* mem #xa000 #xbfff)
