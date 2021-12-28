@@ -141,7 +141,7 @@
 
 (defun map-memory* (mem s e)
   (let ((block (make-memory-block :range (make-range :start s :end e)
-                                  :array (make-array (- e s) :element-type '(unsigned-byte 16)))))
+                                  :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 16)))))
     (map-memory mem block)))
 
 (defun make-memory ()
