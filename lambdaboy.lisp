@@ -99,3 +99,63 @@
 
 ;; auto generated `register-flag-carry` and its setf function.
 (make-flag-accessors carry 4)
+
+;;;; Memory
+
+;; TODO: I think that the memory map should be a balanced binary tree-like structure but
+;; I choose naive and rough way for now.
+
+(defstruct range
+  (start 0 :type (unsigned-byte 16))
+  (end 0 :type (unsigned-byte 16)))
+
+(defun in-range-p (n range)
+  (and (<= (range-start range) n)
+       (<= n (range-start range))))
+
+(defun overwrap-p (range1 range2)
+  (let ((s1 (range-start range1))
+        (e1 (range-end range1))
+        (s2 (range-start range2))
+        (e2 (range-end range2)))
+    (if (<= s1 s2)
+        (<= s2 e1)
+        (<= s1 e2))))
+
+(defstruct memory-block
+  (range nil :type range)
+  (array nil :type (array (unsigned-byte 16))))
+
+(defstruct (memory (:constructor make-memory*))
+  (map (vector) :type (vector memory-block)))
+
+(defun map-memory (mem block)
+  (if (loop
+        :for b :across (memory-map mem)
+        :always (not (overwrap-p (memory-block-range block) (memory-block-range b))))
+      (setf (memory-map mem)
+            (concatenate 'vector (memory-map mem) (vector block)))
+      (error "new block ~a is overwrapped existed ranges:~%  ~a"
+             (memory-block-range block)
+             (map 'list (lambda (b) (memory-block-range b)) (memory-map mem)))))
+
+(defun map-memory* (mem s e)
+  (let ((block (make-memory-block :range (make-range :start s :end e)
+                                  :array (make-array (- e s) :element-type '(unsigned-byte 16)))))
+    (map-memory mem block)))
+
+(defun make-memory ()
+  (let ((mem (make-memory*)))
+    (map-memory* mem #x0000 #x3fff)
+    (map-memory* mem #x4000 #x7fff)
+    (map-memory* mem #x8000 #x9fff)
+    (map-memory* mem #xa000 #xbfff)
+    (map-memory* mem #xc000 #xcfff)
+    (map-memory* mem #xd000 #xdfff)
+    (map-memory* mem #xe000 #xfdff)
+    (map-memory* mem #xfe00 #xfe9f)
+    (map-memory* mem #xfea0 #xfeff)
+    (map-memory* mem #xff00 #xff7f)
+    (map-memory* mem #xff80 #xfffe)
+    (map-memory* mem #xffff #xffff)
+    mem))
