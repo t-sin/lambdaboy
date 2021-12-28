@@ -111,7 +111,7 @@
 
 (defun in-range-p (range n)
   (and (<= (range-start range) n)
-       (<= n (range-start range))))
+       (<= n (range-end range))))
 
 (defun overwrap-p (range1 range2)
   (let ((s1 (range-start range1))
