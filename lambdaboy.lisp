@@ -109,7 +109,7 @@
   (start 0 :type (unsigned-byte 16))
   (end 0 :type (unsigned-byte 16)))
 
-(defun in-range-p (n range)
+(defun in-range-p (range n)
   (and (<= (range-start range) n)
        (<= n (range-start range))))
 
