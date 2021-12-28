@@ -72,3 +72,30 @@
 
 ;; auto generate (register-h), (register-l) and their setf functions.
 (make-accessors hl)
+
+(defmacro make-flag-accessors (name bit)
+  (let* ((n-bit (ash 1 bit))
+         (n-bit-not (lognot n-bit)))
+    (let ((%accessor-name (intern (format nil "REGISTER-FLAG-~a" name))))
+      (with-gensyms ($reg $val)
+        `(progn
+           (defun ,%accessor-name (,$reg)
+             (not (= 0 (logand (register-f ,$reg) ,n-bit))))
+
+           (defun (setf ,%accessor-name) (,$val ,$reg)
+             (setf (register-f ,$reg)
+                   (logior (logand (register-f ,$reg) ,n-bit-not)
+                           (if ,$val ,n-bit 0)))))))))
+
+;; auto generated `register-flag-zero` and its setf function.
+;; zero flag (z) is set if the result of an operation is zero.
+(make-flag-accessors zero 7)
+
+;; auto generated `register-flag-subtract` and its setf function.
+(make-flag-accessors subtract 6)
+
+;; auto generated `register-flag-half-carry` and its setf function.
+(make-flag-accessors half-carry 5)
+
+;; auto generated `register-flag-carry` and its setf function.
+(make-flag-accessors carry 4)
