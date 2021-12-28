@@ -144,6 +144,25 @@
                                   :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 16)))))
     (map-memory mem block)))
 
+(defun find-block (mem addr)
+  (loop
+    :for b :across (memory-map mem)
+    :do (when (in-range-p (memory-block-range b) addr)
+          (return-from find-block b))))
+
+(defun memory-address (mem addr)
+  (let ((b (find-block mem addr)))
+    (when b
+      (aref (memory-block-array b)
+            (- addr (range-start (memory-block-range b)))))))
+
+(defun (setf memory-address) (val mem addr)
+  (let ((b (find-block mem addr)))
+    (when b
+      (setf (aref (memory-block-array b)
+                  (- addr (range-start (memory-block-range b))))
+            val))))
+
 (defun make-memory ()
   (let ((mem (make-memory*)))
     (map-memory* mem #x0000 #x3fff)
