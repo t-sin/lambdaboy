@@ -254,6 +254,12 @@
                   (log-op reg "--- JR C, r8"))))
         (#x44 (log-op reg "LD B, H")
               (setf (register-b reg) (register-h reg)))
+        (#x91 (log-op reg "SUB C")
+              (let ((result (incf (register-a reg) (register-c reg))))
+                (setf (register-flag-subtract reg) t
+                      (register-flag-zero reg) (zerop result)
+                      (register-flag-half-carry reg) (> result #x0f)
+                      (register-flag-carry reg) (minusp result))))
         (#xc3 (log-op reg "JP a16")
               (setf (register-pc reg)
                     (8bit->16bit (operand-1) (operand-2))))
