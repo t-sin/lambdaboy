@@ -265,6 +265,8 @@
                     (8bit->16bit (operand-1) (operand-2))))
         (#xf0 (log-op reg "LDH A, a8")
               (setf (register-a reg) (+ #xff00 (operand-1))))
+        (#xfa (log-op reg "LD A, a16")
+              (setf (register-a reg) (8bit->16bit (operand-1) (operand-2))))
         (#xfe (log-op reg "CP d8")
               (let ((result (- (register-a reg) (operand-1))))
                 (setf (register-flag-subtract reg) t
