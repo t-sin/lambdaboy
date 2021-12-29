@@ -202,7 +202,8 @@
 
 (defstruct gameboy
   (register (make-register) :type register)
-  (memory (make-memory) :type memory))
+  (memory (make-memory) :type memory)
+  (interrupt-enabled t :type (member t nil)))
 
 ;; execute power-up sequence
 (defun initialize-gameboy (gb)
@@ -275,6 +276,8 @@
                     (register-a reg)))
         (#xf0 (log-op "LDH A, a8")
               (setf (register-a reg) (+ #xff00 (operand-1))))
+        (#xf3 (log-op "DI")
+              (setf (gameboy-interrupt-enabled gb) nil))
         (#xfa (log-op "LD A, a16")
               (setf (register-a reg) (8bit->16bit (operand-1) (operand-2))))
         (#xfe (log-op "CP d8")
