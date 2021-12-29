@@ -225,7 +225,8 @@
     (case byte
       (#x00 (vom:debug "op: NOP")
             nil)
-      (t (error "unknown instruction: ~x" byte)))))
+      (t (error "unknown instruction: ~x as pc = ~x"
+                byte (register-pc (gameboy-register gb)))))))
 
 (defun start (gb)
   (loop
