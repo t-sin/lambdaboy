@@ -224,12 +224,17 @@
   (vom:debug "op ~a at PC = #x~x, SP = #x~x"
              op (register-pc reg) (register-sp reg)))
 
+(defun op-call (reg addr)
+  (incf (register-sp reg) -2)
+  (setf (register-pc reg) addr))
+
 ;; decode and execute one instruction
 ;;
 ;; cf. - https://gbdev.io/pandocs/CPU_Instruction_Set.html
 ;;     - https://gbdev.io/gb-opcodes/optables/
 (defun execute-1 (gb)
   (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
          (byte (fetch-byte gb)))
     (case byte
       (#x00 (log-op reg "NOP")
@@ -249,6 +254,10 @@
                     (register-flag-zero reg) (zerop result)
                     (register-flag-half-carry reg) (> result #x0f)
                     (register-flag-carry reg) (minusp result))))
+      (#xff (log-op reg "RST 38H")
+            (let ((addr (8bit->16bit (memory-address mem #x0038)
+                                     (memory-address mem (1+ #x0038)))))
+              (op-call reg addr)))
       (t (error "unknown instruction: #x~x as pc = #x~x"
                 byte (register-pc (gameboy-register gb)))))))
 
