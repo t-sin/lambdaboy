@@ -229,6 +229,8 @@
       (#xc3 (vom:debug "op: JP a16")
             (setf (register-pc reg)
                   (8bit->16bit (fetch-byte gb) (fetch-byte gb))))
+      (#xf0 (vom:debug "op: LDH A, a8")
+            (setf (register-a reg) (+ #xff00 (fetch-byte gb))))
       (t (error "unknown instruction: #x~x as pc = #x~x"
                 byte (register-pc (gameboy-register gb)))))))
 
