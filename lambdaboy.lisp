@@ -168,18 +168,32 @@
           (funcall (memory-block-write-hook b) offset val))
         (setf (aref (memory-block-array b) offset) val)))))
 
+;; make memory and initialize memory map according to this document:
+;; - https://gbdev.io/pandocs/Memory_Map.html
 (defun make-memory ()
   (let ((mem (make-memory*)))
-    (map-memory* mem #x0000 #x3fff (lambda (addr val) (format t "write ~a at ~a" val addr)))
+    ;; ROM cartridge bank 00 (16KiB). its usually fixed bank.
+    (map-memory* mem #x0000 #x3fff)
+    ;; ROM cartridge bank 01 ~ nn (16KiB). its switchable bank.
     (map-memory* mem #x4000 #x7fff)
+    ;; Video RAM (8KiB).
     (map-memory* mem #x8000 #x9fff)
+    ;; External RAM (8KiB).
     (map-memory* mem #xa000 #xbfff)
+    ;; 4KiB Work RAM.
     (map-memory* mem #xc000 #xcfff)
+    ;; 4KiB Work RAM 2.
     (map-memory* mem #xd000 #xdfff)
+    ;; [Prohibited] Echo RAM: Mirror of #xc000 ~ #xdfff.
     (map-memory* mem #xe000 #xfdff)
+    ;; Sprite attribute table.
     (map-memory* mem #xfe00 #xfe9f)
+    ;; [Prohibited] Not usable.
     (map-memory* mem #xfea0 #xfeff)
+    ;; IO registers
     (map-memory* mem #xff00 #xff7f)
+    ;; High RAM
     (map-memory* mem #xff80 #xfffe)
+    ;; Interrupt enable register
     (map-memory* mem #xffff #xffff)
     mem))
