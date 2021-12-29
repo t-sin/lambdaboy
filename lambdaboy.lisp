@@ -100,7 +100,7 @@
 ;; auto generated `register-flag-carry` and its setf function.
 (make-flag-accessors carry 4)
 
-;;;; Memory
+;;; Memory
 
 ;; TODO: I think that the memory map should be a balanced binary tree-like structure but
 ;; I choose naive and rough way for now.
@@ -197,3 +197,25 @@
     ;; Interrupt enable register
     (map-memory* mem #xffff #xffff)
     mem))
+
+;;; gameboy
+
+(defstruct gameboy
+  (register (make-register) :type register)
+  (memory (make-memory) :type memory))
+
+;; execute power-up sequence
+(defun initialize-gameboy (gb)
+  (setf (register-pc (gameboy-register gb)) #x0100))
+
+(defun fetch-inst (gb))
+
+(defun decode-inst (raw))
+
+(defun execute-inst (gb))
+
+(defun run-1 (gb)
+  (let* ((raw (fetch-inst gb))
+         (decoded (decode-inst raw)))
+    (vom:debug "fetched bytes: ~a, and it decoded as ~a" raw decoded)
+    (execute-inst gb decoded)))
