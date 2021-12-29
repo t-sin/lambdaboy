@@ -226,6 +226,10 @@
     (case byte
       (#x00 (vom:debug "op: NOP")
             nil)
+      (#x38 (vom:debug "op: JR C, r8")
+            (when (register-flag-carry reg)
+              (setf (register-pc reg)
+                    (i8-as-integer (fetch-byte gb)))))
       (#xc3 (vom:debug "op: JP a16")
             (setf (register-pc reg)
                   (8bit->16bit (fetch-byte gb) (fetch-byte gb))))
@@ -258,3 +262,8 @@
 
 (defun 8bit->16bit (lsb msb)
   (logior (ash msb 8) lsb))
+
+(defun i8-as-integer (byte)
+  (if (zerop (logand #x80 byte))
+      byte
+      (1+ (- #xff byte))))
