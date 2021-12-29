@@ -220,6 +220,10 @@
                       (register-pc (gameboy-register gb)))
     (incf (register-pc (gameboy-register gb)))))
 
+;; decode and execute one instruction
+;;
+;; cf. - https://gbdev.io/pandocs/CPU_Instruction_Set.html
+;;     - https://gbdev.io/gb-opcodes/optables/
 (defun execute-1 (gb)
   (let* ((reg (gameboy-register gb))
          (byte (fetch-byte gb)))
