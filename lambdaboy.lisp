@@ -206,7 +206,12 @@
 
 ;; execute power-up sequence
 (defun initialize-gameboy (gb)
-  (setf (register-pc (gameboy-register gb)) #x0100))
+  (setf (register-pc (gameboy-register gb)) #x0100
+        (register-sp (gameboy-register gb)) #xfffe))
+        ;; (register-af (gameboy-register gb)) #x0100
+        ;; (register-bc (gameboy-register gb)) #xff13
+        ;; (register-de (gameboy-register gb)) #x00c1
+        ;; (register-hl (gameboy-register gb)) #x8403))
 
 (defun load-rom (gb rom)
   (loop
@@ -214,11 +219,8 @@
     :do (setf (memory-address (gameboy-memory gb) addr)
               (aref rom addr))))
 
-(defun fetch-byte (gb)
-  (prog1
-      (memory-address (gameboy-memory gb)
-                      (register-pc (gameboy-register gb)))
-    (incf (register-pc (gameboy-register gb)))))
+(defun progress-pc (gb)
+  (incf (register-pc (gameboy-register gb))))
 
 (defun log-op (reg op)
   (vom:debug "op ~a at PC = #x~x, SP = #x~x"
@@ -235,31 +237,39 @@
 (defun execute-1 (gb)
   (let* ((reg (gameboy-register gb))
          (mem (gameboy-memory gb))
-         (byte (fetch-byte gb)))
-    (case byte
-      (#x00 (log-op reg "NOP")
-            nil)
-      (#x38 (log-op reg "JR C, r8")
-            (when (register-flag-carry reg)
-              (incf (register-pc reg)
-                    (i8-as-integer (fetch-byte gb)))))
-      (#xc3 (log-op reg "JP a16")
-            (setf (register-pc reg)
-                  (8bit->16bit (fetch-byte gb) (fetch-byte gb))))
-      (#xf0 (log-op reg "LDH A, a8")
-            (setf (register-a reg) (+ #xff00 (fetch-byte gb))))
-      (#xfe (log-op reg "CP d8")
-            (let ((result (- (register-a reg) (fetch-byte gb))))
-              (setf (register-flag-subtract reg) t
-                    (register-flag-zero reg) (zerop result)
-                    (register-flag-half-carry reg) (> result #x0f)
-                    (register-flag-carry reg) (minusp result))))
-      (#xff (log-op reg "RST 38H")
-            (let ((addr (8bit->16bit (memory-address mem #x0038)
-                                     (memory-address mem (1+ #x0038)))))
-              (op-call reg addr)))
-      (t (error "unknown instruction: #x~x as pc = #x~x"
-                byte (register-pc (gameboy-register gb)))))))
+         (pc (register-pc reg))
+         (opcode (memory-address mem pc)))
+    (flet ((operand-1 ()
+             (memory-address mem (+ pc 1)))
+           (operand-2 ()
+             (memory-address mem (+ pc 2))))
+      (case opcode
+        (#x00 (log-op reg "NOP")
+              nil)
+        (#x38 (log-op reg "JR C, r8")
+              (when (register-flag-carry reg)
+                (let ((offset (i8-as-integer (operand-1))))
+                  (vom:debug "jump offset = #x~x" offset)
+                  (incf (register-pc reg) offset)
+                  (log-op reg "--- JR C, r8"))))
+        (#xc3 (log-op reg "JP a16")
+              (setf (register-pc reg)
+                    (8bit->16bit (operand-1) (operand-2))))
+        (#xf0 (log-op reg "LDH A, a8")
+              (setf (register-a reg) (+ #xff00 (operand-1))))
+        (#xfe (log-op reg "CP d8")
+              (let ((result (- (register-a reg) (operand-1))))
+                (setf (register-flag-subtract reg) t
+                      (register-flag-zero reg) (zerop result)
+                      (register-flag-half-carry reg) (> result #x0f)
+                      (register-flag-carry reg) (minusp result))))
+        (#xff (log-op reg "RST 38H")
+              (let ((addr (8bit->16bit (memory-address mem #x0038)
+                                       (memory-address mem (1+ #x0038)))))
+                (op-call reg addr)))
+        (t (error "unknown instruction: #x~x as pc = #x~x"
+                  opcode (register-pc (gameboy-register gb)))))
+      (progress-pc gb))))
 
 (defun run (gb)
   (loop
