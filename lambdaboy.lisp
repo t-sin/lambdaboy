@@ -260,6 +260,12 @@
                       (register-flag-zero reg) (zerop result)
                       (register-flag-half-carry reg) (> result #x0f)
                       (register-flag-carry reg) (minusp result))))
+        (#xaf (log-op reg "XOR A")
+              (setf (register-a reg) 0)
+              (setf (register-flag-zero reg) t
+                    (register-flag-subtract reg) nil
+                    (register-flag-half-carry reg) nil
+                    (register-flag-carry reg) nil))
         (#xc3 (log-op reg "JP a16")
               (setf (register-pc reg)
                     (8bit->16bit (operand-1) (operand-2))))
