@@ -208,14 +208,19 @@
 (defun initialize-gameboy (gb)
   (setf (register-pc (gameboy-register gb)) #x0100))
 
-(defun fetch-inst (gb))
+(defun fetch-byte (gb)
+  (prog1
+      (memory-address (gameboy-memory gb)
+                      (register-pc (gameboy-register gb)))
+    (incf (register-pc (gameboy-register gb)))))
 
-(defun decode-inst (raw))
+(defun execute-1 (gb)
+  (let* ((byte (fetch-byte gb)))
+    (case byte
+      (#x00 (vom:debug "op: NOP")
+            nil)
+      (t (error "unknown instruction: ~x" byte)))))
 
-(defun execute-inst (gb))
-
-(defun run-1 (gb)
-  (let* ((raw (fetch-inst gb))
-         (decoded (decode-inst raw)))
-    (vom:debug "fetched bytes: ~a, and it decoded as ~a" raw decoded)
-    (execute-inst gb decoded)))
+(defun start (gb)
+  (loop
+    (execute-1 gb)))
