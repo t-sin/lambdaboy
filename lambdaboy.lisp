@@ -228,6 +228,16 @@
       (t (error "unknown instruction: ~x as pc = ~x"
                 byte (register-pc (gameboy-register gb)))))))
 
-(defun start (gb)
+(defun run (gb)
   (loop
     (execute-1 gb)))
+
+(defun start-gb (pathname)
+  (let ((gb (make-gameboy))
+        (rom (make-array #x8000 :element-type '(unsigned-byte 8))))
+    (with-open-file (in pathname :direction :input
+                        :element-type '(unsigned-byte 8))
+      (read-sequence rom in))
+    (load-rom gb rom)
+    (initialize-gameboy gb)
+    (run gb)))
