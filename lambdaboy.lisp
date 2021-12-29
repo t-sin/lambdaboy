@@ -208,6 +208,12 @@
 (defun initialize-gameboy (gb)
   (setf (register-pc (gameboy-register gb)) #x0100))
 
+(defun load-rom (gb rom)
+  (loop
+    :for addr :from 0 :upto #x7fff
+    :do (setf (memory-address (gameboy-memory gb) addr)
+              (aref rom addr))))
+
 (defun fetch-byte (gb)
   (prog1
       (memory-address (gameboy-memory gb)
