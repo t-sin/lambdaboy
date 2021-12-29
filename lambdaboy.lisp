@@ -124,7 +124,7 @@
 
 (defstruct memory-block
   (range nil :type range)
-  (array nil :type (array (unsigned-byte 16)))
+  (array nil :type (array (unsigned-byte 8)))
   (write-hook nil :type function))
 
 (defstruct (memory (:constructor make-memory*))
@@ -144,7 +144,7 @@
          (declare (ignore addr val))))
   (defun map-memory* (mem s e &optional (fn #'do-nothing))
     (let ((block (make-memory-block :range (make-range :start s :end e)
-                                    :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 16))
+                                    :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 8))
                                     :write-hook fn)))
       (map-memory mem block))))
 
