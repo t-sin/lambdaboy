@@ -252,6 +252,8 @@
                   (vom:debug "jump offset = #x~x" offset)
                   (incf (register-pc reg) offset)
                   (log-op reg "--- JR C, r8"))))
+        (#x44 (log-op reg "LD B, H")
+              (setf (register-b reg) (register-h reg)))
         (#xc3 (log-op reg "JP a16")
               (setf (register-pc reg)
                     (8bit->16bit (operand-1) (operand-2))))
