@@ -221,11 +221,17 @@
     (incf (register-pc (gameboy-register gb)))))
 
 (defun execute-1 (gb)
-  (let* ((byte (fetch-byte gb)))
+  (let* ((reg (gameboy-register gb))
+         (byte (fetch-byte gb)))
     (case byte
       (#x00 (vom:debug "op: NOP")
             nil)
-      (t (error "unknown instruction: ~x as pc = ~x"
+      (#xc3 (vom:debug "op: JP a16")
+            (let* ((lsb (fetch-byte gb))
+                   (msb (fetch-byte gb))
+                   (pc (8bit->16bit msb lsb)))
+              (setf (register-pc reg) pc)))
+      (t (error "unknown instruction: #x~x as pc = #x~x"
                 byte (register-pc (gameboy-register gb)))))))
 
 (defun run (gb)
@@ -241,3 +247,8 @@
     (load-rom gb rom)
     (initialize-gameboy gb)
     (run gb)))
+
+;;;; util
+
+(defun 8bit->16bit (msb lsb)
+  (logior (ash msb 8) lsb))
