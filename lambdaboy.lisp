@@ -246,6 +246,9 @@
       (case opcode
         (#x00 (log-op "NOP")
               nil)
+        (#x31 (log-op "LD SP, d16")
+              (setf (register-sp reg)
+                    (8bit->16bit (operand-1) (operand-2))))
         (#x38 (log-op "JR C, r8")
               (when (register-flag-carry reg)
                 (let ((offset (i8-as-integer (operand-1))))
