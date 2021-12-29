@@ -227,10 +227,8 @@
       (#x00 (vom:debug "op: NOP")
             nil)
       (#xc3 (vom:debug "op: JP a16")
-            (let* ((lsb (fetch-byte gb))
-                   (msb (fetch-byte gb))
-                   (pc (8bit->16bit msb lsb)))
-              (setf (register-pc reg) pc)))
+            (setf (register-pc reg)
+                  (8bit->16bit (fetch-byte gb) (fetch-byte gb))))
       (t (error "unknown instruction: #x~x as pc = #x~x"
                 byte (register-pc (gameboy-register gb)))))))
 
@@ -250,5 +248,5 @@
 
 ;;;; util
 
-(defun 8bit->16bit (msb lsb)
+(defun 8bit->16bit (lsb msb)
   (logior (ash msb 8) lsb))
