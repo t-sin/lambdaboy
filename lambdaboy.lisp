@@ -241,7 +241,7 @@
             nil)
       (#x38 (log-op reg "JR C, r8")
             (when (register-flag-carry reg)
-              (setf (register-pc reg)
+              (incf (register-pc reg)
                     (i8-as-integer (fetch-byte gb)))))
       (#xc3 (log-op reg "JP a16")
             (setf (register-pc reg)
