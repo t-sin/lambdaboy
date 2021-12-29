@@ -250,6 +250,9 @@
                 (let ((offset (i8-as-integer (operand-1))))
                   (vom:debug "jump offset = #x~x" offset)
                   (incf (register-pc reg) offset))))
+        (#x40 (log-op "LD B, B")
+              ;; equivalent to NOP...?
+              (setf (register-b reg) (register-b reg)))
         (#x44 (log-op "LD B, H")
               (setf (register-b reg) (register-h reg)))
         (#x91 (log-op "SUB C")
