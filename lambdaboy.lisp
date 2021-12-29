@@ -220,6 +220,10 @@
                       (register-pc (gameboy-register gb)))
     (incf (register-pc (gameboy-register gb)))))
 
+(defun log-op (reg op)
+  (vom:debug "op ~a at PC = #x~x, SP = #x~x"
+             op (register-pc reg) (register-sp reg)))
+
 ;; decode and execute one instruction
 ;;
 ;; cf. - https://gbdev.io/pandocs/CPU_Instruction_Set.html
@@ -228,18 +232,18 @@
   (let* ((reg (gameboy-register gb))
          (byte (fetch-byte gb)))
     (case byte
-      (#x00 (vom:debug "op: NOP")
+      (#x00 (log-op reg "NOP")
             nil)
-      (#x38 (vom:debug "op: JR C, r8")
+      (#x38 (log-op reg "JR C, r8")
             (when (register-flag-carry reg)
               (setf (register-pc reg)
                     (i8-as-integer (fetch-byte gb)))))
-      (#xc3 (vom:debug "op: JP a16")
+      (#xc3 (log-op reg "JP a16")
             (setf (register-pc reg)
                   (8bit->16bit (fetch-byte gb) (fetch-byte gb))))
-      (#xf0 (vom:debug "op: LDH A, a8")
+      (#xf0 (log-op reg "LDH A, a8")
             (setf (register-a reg) (+ #xff00 (fetch-byte gb))))
-      (#xfe (vom:debug "op: CP d8")
+      (#xfe (log-op reg "CP d8")
             (let ((result (- (register-a reg) (fetch-byte gb))))
               (setf (register-flag-subtract reg) t
                     (register-flag-zero reg) (zerop result)
