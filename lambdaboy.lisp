@@ -231,6 +231,12 @@
                   (8bit->16bit (fetch-byte gb) (fetch-byte gb))))
       (#xf0 (vom:debug "op: LDH A, a8")
             (setf (register-a reg) (+ #xff00 (fetch-byte gb))))
+      (#xfe (vom:debug "op: CP d8")
+            (let ((result (- (register-a reg) (fetch-byte gb))))
+              (setf (register-flag-subtract reg) t
+                    (register-flag-zero reg) (zerop result)
+                    (register-flag-half-carry reg) (> result #x0f)
+                    (register-flag-carry reg) (minusp result))))
       (t (error "unknown instruction: #x~x as pc = #x~x"
                 byte (register-pc (gameboy-register gb)))))))
 
