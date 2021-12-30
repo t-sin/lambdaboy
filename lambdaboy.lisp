@@ -293,6 +293,16 @@
                         (log-op "JP #x~x" a16)
                         (setf (register-pc reg) a16))
                       0)
+                (#xcb (incf (register-pc reg))
+                      (let* ((pc (register-pc reg))
+                             (opcode (memory-address mem pc)))
+                        (case opcode
+                          (#xae (log-op "RES 5, HL")
+                                (setf (register-hl reg)
+                                      (logand (register-hl reg) #xffdf))
+                                1)
+                          (t (error "unknown instruction: #xCB #x~x as pc = #x~x"
+                                    opcode (register-pc (gameboy-register gb)))))))
                 (#xcd (let ((a16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "CALL #x~x" a16)
                         (op-call reg a16))
