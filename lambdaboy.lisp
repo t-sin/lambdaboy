@@ -251,9 +251,11 @@
                       3)
                 (#x38 (let ((offset (i8-as-integer (operand-1))))
                         (log-op "JR C, #x~x" offset)
-                        (when (register-flag-carry reg)
-                          (incf (register-pc reg) offset)))
-                      2)
+                        (if (register-flag-carry reg)
+                            (progn
+                              (incf (register-pc reg) offset)
+                              0)
+                            2)))
                 (#x40 (log-op "LD B, B")
                       ;; equivalent to NOP...?
                       (setf (register-b reg) (register-b reg))
@@ -278,7 +280,7 @@
                 (#xc3 (let ((a16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "JP #x~x" a16)
                         (setf (register-pc reg) a16))
-                      3)
+                      0)
                 (#xe0 (log-op "LDH #x~x, A" (operand-1))
                       (setf (memory-address mem (+ #xff00 (operand-1)))
                             (register-a reg))
