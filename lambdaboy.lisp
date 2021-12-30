@@ -296,6 +296,13 @@
                         (log-op "JP #x~x" a16)
                         (setf (register-pc reg) a16))
                       0)
+                (#xc9 (log-op "RET")
+                      (let* ((addr (memory-address mem (register-sp reg)))
+                             (addr (logior addr
+                                          (ash (memory-address mem (1+ (register-sp reg))) 8))))
+                        (incf (register-sp reg) 2)
+                        (setf (register-pc reg) addr))
+                      0)
                 (#xcb (incf (register-pc reg))
                       (let* ((pc (register-pc reg))
                              (opcode (memory-address mem pc)))
