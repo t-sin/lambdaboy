@@ -286,6 +286,12 @@
                               (incf (register-pc reg) offset)
                               0)
                             2)))
+                (#x3c (log-op "INC A")
+                      (let ((result (incf (register-a reg))))
+                        (set-flags :zero (> result #xff)
+                                   :sub nil
+                                   :hc (> result #x0f)))
+                      1)
                 (#x40 (log-op "LD B, B")
                       ;; equivalent to NOP...?
                       (setf (register-b reg) (register-b reg))
