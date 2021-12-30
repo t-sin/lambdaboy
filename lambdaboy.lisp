@@ -220,8 +220,11 @@
     :do (setf (memory-address (gameboy-memory gb) addr)
               (aref rom addr))))
 
-(defun op-call (reg addr)
-  (incf (register-sp reg) -2)
+(defun op-call (reg mem addr)
+  (let ((sp (incf (register-sp reg) -2))
+        (pc (1+ (register-pc reg))))
+    (setf (memory-address mem sp) (logand pc #x00ff)
+          (memory-address mem (1+ sp)) (ash (logand pc #xff00) -8)))
   (setf (register-pc reg) addr))
 
 ;; decode and execute one instruction
@@ -309,8 +312,8 @@
                                     opcode (register-pc (gameboy-register gb)))))))
                 (#xcd (let ((a16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "CALL #x~x" a16)
-                        (op-call reg a16))
-                        0)
+                        (op-call reg mem a16))
+                      0)
                 (#xe0 (log-op "LDH #x~x, A" (operand-1))
                       (setf (memory-address mem (+ #xff00 (operand-1)))
                             (register-a reg))
@@ -336,7 +339,7 @@
                 (#xff (log-op "RST 38H")
                       (let ((addr (8bit->16bit (memory-address mem #x0038)
                                                (memory-address mem (1+ #x0038)))))
-                        (op-call reg addr))
+                        (op-call reg mem addr))
                       0)
                 (t (error "unknown instruction: #x~x as pc = #x~x"
                           opcode (register-pc (gameboy-register gb)))))))
