@@ -244,11 +244,18 @@
              (memory-address mem (+ pc 1)))
            (operand-2 ()
              (memory-address mem (+ pc 2)))
-           (set-flags (z s hc c)
-             (setf (register-flag-subtract reg) s
-                   (register-flag-zero reg) z
-                   (register-flag-half-carry reg) hc
-                   (register-flag-carry reg) c)))
+           (set-flags (&key (zero nil zero-p)
+                            (sub nil sub-p)
+                            (hc nil hc-p)
+                            (carry nil carry-p))
+             (when zero-p
+               (setf (register-flag-zero reg) zero))
+             (when sub-p
+               (setf (register-flag-subtract reg) sub))
+             (when hc-p
+               (register-flag-half-carry reg) hc)
+             (when carry-p
+               (register-flag-carry reg) carry)))
       (let ((pc-diff
               (case opcode
                 (#x00 (log-op "NOP")
@@ -256,7 +263,10 @@
                 (#x09 (log-op "ADD HL, BC")
                       (let ((result (+ (register-hl reg) (register-bc reg))))
                         (setf (register-a reg) result)
-                        (set-flags (zerop result) nil (> result #x0f) (> result #xff))
+                        (set-flags :zero (zerop result)
+                                   :sub nil
+                                   :hc (> result #x0f)
+                                   :carry (> result #xff))
                       1))
                 (#x21 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "LD HL, #x~x" d16)
@@ -289,16 +299,22 @@
                 (#x91 (log-op "SUB C (A=#x~x, C=#x~x)" (register-a reg) (register-c reg))
                       (let ((result (incf (register-a reg) (register-c reg))))
                         (setf (register-a reg) result)
-                        (set-flags (zerop result) t (> result #x0f) (minusp result)))
+                        (set-flags :zero (zerop result)
+                                   :sub t
+                                   :hc (> result #x0f)
+                                   :carry (minusp result)))
                       1)
                 (#xaf (log-op "XOR A")
                       (setf (register-a reg) 0)
-                      (set-flags t nil nil nil)
+                      (set-flags :zero t :sub nil :hc nil :carry nil)
                       1)
                 (#xbe (log-op "CP (HL)")
                       (let ((result (- (register-a reg)
                                        (memory-address mem (register-hl reg)))))
-                        (set-flags (zerop result) t (> result #x0f) (minusp result)))
+                        (set-flags :zero (zerop result)
+                                   :sub t
+                                   :hc (> result #x0f)
+                                   :carry (minusp result)))
                       1)
                 (#xc3 (let ((a16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "JP #x~x" a16)
@@ -335,7 +351,10 @@
                       0)
                 (#xd6 (log-op "SUB #x~x" (operand-1))
                       (let ((result (- (register-a reg) (operand-1))))
-                        (set-flags (zerop result) 1 (> result #x0f) (minusp result))
+                        (set-flags :zero (zerop result)
+                                   :sub 1
+                                   :hc (> result #x0f)
+                                   :carry (minusp result))
                         (setf (register-a reg) result))
                       2)
                 (#xe0 (log-op "LDH #x~x, A" (operand-1))
@@ -358,7 +377,10 @@
                       3)
                 (#xfe (log-op "CP #x~x " (operand-1))
                       (let ((result (- (register-a reg) (operand-1))))
-                        (set-flags (zerop result) t (> result #x0f) (minusp result)))
+                        (set-flags :zero (zerop result)
+                                   :sub t
+                                   :hc (> result #x0f)
+                                   :carry (minusp result)))
                       2)
                 (#xff (log-op "RST 38H")
                       (let ((addr (8bit->16bit (memory-address mem #x0038)
