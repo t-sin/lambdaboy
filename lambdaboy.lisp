@@ -317,7 +317,7 @@
                       (let ((addr (8bit->16bit (memory-address mem #x0038)
                                                (memory-address mem (1+ #x0038)))))
                         (op-call reg addr))
-                      1)
+                      0)
                 (t (error "unknown instruction: #x~x as pc = #x~x"
                           opcode (register-pc (gameboy-register gb)))))))
         (incf (register-pc reg) pc-diff)))))
