@@ -297,6 +297,10 @@
                       (let* ((pc (register-pc reg))
                              (opcode (memory-address mem pc)))
                         (case opcode
+                          (#x9e (log-op "RES 3, HL")
+                                (setf (register-hl reg)
+                                      (logand (register-hl reg) #xfffb))
+                                1)
                           (#xae (log-op "RES 5, HL")
                                 (setf (register-hl reg)
                                       (logand (register-hl reg) #xffdf))
