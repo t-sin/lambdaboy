@@ -245,6 +245,10 @@
               (case opcode
                 (#x00 (log-op "NOP")
                       1)
+                (#x21 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
+                        (log-op "LD HL, #x~x" d16)
+                        (setf (register-hl reg) d16))
+                      3)
                 (#x31 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "LD SP, #x~x" d16)
                         (setf (register-sp reg) d16))
