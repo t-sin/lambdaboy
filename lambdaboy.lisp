@@ -356,6 +356,13 @@
                       (setf (register-a reg) 0)
                       (set-flags :zero t :sub nil :hc nil :carry nil)
                       1)
+                (#xb9 (log-op "CP C")
+                      (let ((result (- (register-a reg) (register-c reg))))
+                        (set-flags :zero (zerop result)
+                                   :sub t
+                                   :hc (> result #x0f)
+                                   :carry (minusp result)))
+                      1)
                 (#xbe (log-op "CP (HL)")
                       (let ((result (- (register-a reg)
                                        (memory-address mem (register-hl reg)))))
