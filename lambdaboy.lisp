@@ -277,6 +277,7 @@
                       1)
                 (#x91 (log-op "SUB C (A=#x~x, C=#x~x)" (register-a reg) (register-c reg))
                       (let ((result (incf (register-a reg) (register-c reg))))
+                        (setf (register-a reg) result)
                         (set-flags (zerop result) t (> result #x0f) (minusp result)))
                       1)
                 (#xaf (log-op "XOR A")
