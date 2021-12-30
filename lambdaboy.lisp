@@ -250,6 +250,11 @@
               (case opcode
                 (#x00 (log-op "NOP")
                       1)
+                (#x09 (log-op "ADD HL, BC")
+                      (let ((result (+ (register-hl reg) (register-bc reg))))
+                        (setf (register-a reg) result)
+                        (set-flags (zerop result) nil (> result #x0f) (> result #xff))
+                      1)
                 (#x21 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "LD HL, #x~x" d16)
                         (setf (register-hl reg) d16))
