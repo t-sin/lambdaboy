@@ -315,6 +315,10 @@
                                 (setf (register-hl reg)
                                       (logand (register-hl reg) #.(lognot #x0010)))
                                 1)
+                          (#xe6 (log-op "SET 4, (HL)")
+                                (setf (register-hl reg)
+                                      (logand (register-hl reg) #.(lognot #x0008)))
+                                1)
                           (t (error "unknown instruction: #xCB #x~x as pc = #x~x"
                                     opcode (register-pc (gameboy-register gb)))))))
                 (#xcd (let ((a16 (8bit->16bit (operand-1) (operand-2))))
