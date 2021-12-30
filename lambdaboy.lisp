@@ -268,6 +268,13 @@
                                    :hc (> result #x0f)
                                    :carry (> result #xff))
                       1))
+                (#x20 (let ((offset (i8-as-integer (operand-1))))
+                        (log-op "JR NZ, #x~x" offset)
+                        (if (not (register-flag-zero reg))
+                            (progn
+                              (incf (register-pc reg) offset)
+                              0)
+                            2)))
                 (#x21 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
                         (log-op "LD HL, #x~x" d16)
                         (setf (register-hl reg) d16))
