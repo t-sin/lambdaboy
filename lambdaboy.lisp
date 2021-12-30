@@ -298,6 +298,13 @@
                         (log-op "LD HL, #x~x" d16)
                         (setf (register-hl reg) d16))
                       3)
+                (#x28 (let ((offset (i8-as-integer (operand-1))))
+                        (log-op "JR Z, #x~x" offset)
+                        (if (register-flag-zero reg)
+                            (progn
+                              (incf (register-pc reg) offset)
+                              0)
+                            2)))
                 (#x26 (log-op "LD H, #x~x" (operand-1))
                       (setf (register-h reg) (operand-1))
                       2)
