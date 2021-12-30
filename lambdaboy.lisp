@@ -309,11 +309,11 @@
                         (case opcode
                           (#x9e (log-op "RES 3, HL")
                                 (setf (register-hl reg)
-                                      (logand (register-hl reg) #xfffb))
+                                      (logand (register-hl reg) #.(lognot #x0004)))
                                 1)
                           (#xae (log-op "RES 5, HL")
                                 (setf (register-hl reg)
-                                      (logand (register-hl reg) #xffdf))
+                                      (logand (register-hl reg) #.(lognot #x0010)))
                                 1)
                           (t (error "unknown instruction: #xCB #x~x as pc = #x~x"
                                     opcode (register-pc (gameboy-register gb)))))))
