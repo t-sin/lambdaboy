@@ -416,10 +416,10 @@
                                       (b c d e h l (hl) a))
                    (if (zerop (logand #x8 op-ls4))
                        (progn
-                         (log-op "LD B ~a" name)
+                         (log-op "LD B, ~a" name)
                          (setf (register-b reg) val))
                        (progn
-                         (log-op "LD C ~a" name)
+                         (log-op "LD C, ~a" name)
                            (setf (register-c reg) val)))
                    1))
                 ((#x5 _)
@@ -428,10 +428,10 @@
                                       (b c d e h l (hl) a))
                    (if (zerop (logand #x8 op-ls4))
                        (progn
-                         (log-op "LD D ~a" name)
+                         (log-op "LD D, ~a" name)
                          (setf (register-d reg) val))
                        (progn
-                         (log-op "LD E ~a" name)
+                         (log-op "LD E, ~a" name)
                            (setf (register-e reg) val)))
                    1))
                 ((#x6 _)
@@ -440,10 +440,10 @@
                                       (b c d e h l (hl) a))
                    (if (zerop (logand #x8 op-ls4))
                        (progn
-                         (log-op "LD H ~a" name)
+                         (log-op "LD H, ~a" name)
                          (setf (register-h reg) val))
                        (progn
-                         (log-op "LD L ~a" name)
+                         (log-op "LD L, ~a" name)
                            (setf (register-l reg) val)))
                    1))
                 ((#x7 _)
