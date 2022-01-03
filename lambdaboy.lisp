@@ -469,7 +469,10 @@
                                       (b c d e h l (hl) a))
                    (if (zerop (logand #x8 op-ls4))
                        (progn
-                         (log-op "AND ~a" name))
+                         (log-op "AND ~a" name)
+                         (let ((result (logand (register-a reg) val)))
+                           (setf (register-a reg) result)
+                           (set-flags :zero (zerop result) :sub nil :hc t :carry nil)))
                        (progn
                          (log-op "XOR ~a" name)
                          (let ((result (logxor (register-a reg) val)))
@@ -482,7 +485,10 @@
                                       (b c d e h l (hl) a))
                    (if (zerop (logand #x8 op-ls4))
                        (progn
-                         (log-op "OR ~a" name))
+                         (log-op "OR ~a" name)
+                         (let ((result (logior (register-a reg) val)))
+                           (setf (register-a reg) result)
+                           (set-flags :zero (zerop result) :sub nil :hc nil :carry nil)))
                        (progn
                          (log-op "CP ~a" name)
                          (let ((result (- (register-a reg) val)))
