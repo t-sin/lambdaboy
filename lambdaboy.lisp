@@ -279,7 +279,7 @@
          (op-ms4 (ash (logand opcode #xf0) -4))
          (op-ls4 (logand opcode #x0f)))
     (flet ((log-op (op &rest args)
-             (vom:debug "[PC:#x~x, SP:#x~x] op ~x: ~a"
+             (vom:debug "[PC:#x~4,'0x, SP:#x~4,'0x] op ~2,'0x: ~a"
                         (register-pc reg) (register-sp reg)
                         opcode (apply #'format nil op args)))
            (operand-1 ()
