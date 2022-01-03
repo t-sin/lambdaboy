@@ -493,7 +493,9 @@
                      (error "not implemented")))
                 ((_ #x6)
                  (if (<= op-ms4 #x3)
-                     (error "not implemented")
+                     (let ((name (set-register op-ms4 (b d h (hl)) (operand-1))))
+                       (log-op "LD ~a, #x~x" name (operand-1))
+                       2)
                      (ecase op-ms4
                        (#xd (log-op "SUB #x~x" (operand-1))
                             (let ((result (- (register-a reg) (operand-1))))
@@ -527,12 +529,6 @@
                  )))
 
               ;; (case opcode
-              ;;   (#x06 (log-op "LD B, #x~x" (operand-1))
-              ;;         (setf (register-b reg) (operand-1))
-              ;;         2)
-              ;;   (#x26 (log-op "LD H, #x~x" (operand-1))
-              ;;         (setf (register-h reg) (operand-1))
-              ;;         2)
               ;;   (#x2a (log-op "LDI A, (HL)")
               ;;         (setf (register-a reg)
               ;;               (memory-address mem (register-hl reg)))
