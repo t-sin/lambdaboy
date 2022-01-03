@@ -252,6 +252,21 @@
                               (let (($accessor (intern (format nil "REGISTER-~a" r))))
                                 `(values ',r (,$accessor reg)))))))))
 
+(defmacro set-register (idx reg-list val)
+  `(ecase ,idx
+     ,@(loop
+         :for n :from 0 :below (length reg-list)
+         :collect `(,n ,(let ((r (elt reg-list n)))
+                          (if (listp r)
+                              (let (($accessor (intern (format nil "REGISTER-~a" (first r)))))
+                                `(progn
+                                   (setf (memory-address mem (,$accessor reg)) ,val)
+                                   ',r))
+                              (let (($accessor (intern (format nil "REGISTER-~a" r))))
+                                `(progn
+                                   (setf (,$accessor reg) ,val)
+                                   ',r))))))))
+
 ;; decode and execute one instruction
 ;;
 ;; cf. - https://gbdev.io/pandocs/CPU_Instruction_Set.html
@@ -334,7 +349,12 @@
                          (let ((result (logxor (register-a reg) val)))
                            (setf (register-a reg) result)
                            (set-flags :zero (zerop result) :sub nil :hc nil :carry nil))))
-                   1)))
+                   1))
+                ((_ #x1)
+                 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
+                   (let ((name (set-register op-ms4 (bc de hl sp) d16)))
+                     (log-op "LD ~a, #x~x" name d16)
+                     3))))
 
               ;; (case opcode
               ;;   (#x09 (log-op "ADD HL, BC")
@@ -351,10 +371,6 @@
               ;;   (#x0e (log-op "LD C, #x~x" (operand-1))
               ;;         (setf (register-c reg) (operand-1))
               ;;         2)
-              ;;   (#x11 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
-              ;;           (log-op "LD DE, #x~x" d16)
-              ;;           (setf (register-de reg) d16))
-              ;;         3)
               ;;   (#x18 (let ((offset (i8-as-integer (operand-1))))
               ;;           (log-op "JR #x~x" offset)
               ;;           (incf (register-pc reg) offset)
@@ -371,10 +387,6 @@
               ;;                 (incf (register-pc reg) offset)
               ;;                 0)
               ;;               2)))
-              ;;   (#x21 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
-              ;;           (log-op "LD HL, #x~x" d16)
-              ;;           (setf (register-hl reg) d16))
-              ;;         3)
               ;;   (#x28 (let ((offset (i8-as-integer (operand-1))))
               ;;           (log-op "JR Z, #x~x" offset)
               ;;           (if (register-flag-zero reg)
@@ -390,10 +402,6 @@
               ;;               (memory-address mem (register-hl reg)))
               ;;         (incf (register-hl reg))
               ;;         1)
-              ;;   (#x31 (let ((d16 (8bit->16bit (operand-1) (operand-2))))
-              ;;           (log-op "LD SP, #x~x" d16)
-              ;;           (setf (register-sp reg) d16))
-              ;;         3)
               ;;   (#x3e (log-op "LD A, #x~x" (operand-1))
               ;;         (setf (register-a reg) (operand-1))
               ;;         2)
