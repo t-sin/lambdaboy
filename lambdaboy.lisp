@@ -522,8 +522,7 @@
                                     :hc (> result #x0f)
                                     :carry (> result #xff)))
                        1)
-                     ;; not implemented
-                     0))
+                     (error "not implemented")))
                 ((_ #xc)
                  (if (<= op-ms4 #x3)
                      (multiple-value-bind (name val)
@@ -542,7 +541,7 @@
                        (log-op "LD ~a, #x~x" name (operand-1))
                        2)
                      ;; #xCE ~ #xFE
-                     0
+                     (error "not implemented")
                  )))
 
               ;; (case opcode
