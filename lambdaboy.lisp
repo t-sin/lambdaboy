@@ -267,6 +267,10 @@
                                    (setf (,$accessor reg) ,val)
                                    ',r))))))))
 
+(defmacro unknown-instruction ()
+  `(error "unknown instruction: #x~x as pc = #x~x"
+          opcode (register-pc (gameboy-register gb))))
+
 ;; decode and execute one instruction
 ;;
 ;; cf. - https://gbdev.io/pandocs/CPU_Instruction_Set.html
@@ -533,7 +537,7 @@
                                                (register-a reg))))
                        (log-op "LD ~a, A" name)
                        1)
-                     (error "not implemented")))
+                     (unknown-instruction)))
                 ((_ #x3)
                  (if (<= op-ms4 #x3)
                      (multiple-value-bind (name val)
@@ -541,10 +545,10 @@
                        (log-op "INC ~a" name)
                        (set-register op-ms4 (bc de hl sp) (1+ val))
                        1)
-                     (error "not implemented")))
+                     (unknown-instruction)))
                 ((_ #x5)
                  (if (<= op-ms4 #x3)
-                     (error "not implemented")
+                     (unknown-instruction)
                      (multiple-value-bind (name val)
                          (select-register (- op-ms4 #xc) (bc de hl af))
                        (log-op "PUSH ~a" name)
@@ -579,7 +583,7 @@
                                     :hc (> result #x0f)
                                     :carry (> result #xff)))
                        1)
-                     (error "not implemented")))
+                     (unknown-instruction)))
                 ((_ #xa)
                  (if (<= op-ms4 #x3)
                      (multiple-value-bind (name val)
@@ -593,7 +597,7 @@
                              (t (log-op "LD A, ~a" name)))
                        (setf (register-a reg) val)
                        1)
-                     (error "not implemented")))
+                     (unknown-instruction)))
                 ((_ #xb)
                  (if (<= op-ms4 #x3)
                      (multiple-value-bind (name val)
@@ -601,7 +605,7 @@
                        (log-op "DEC ~a" name)
                        (set-register op-ms4 (bc de hl sp) (1- val))
                        1)
-                     (error "not implemented")))
+                     (unknown-instruction)))
                 ((_ #xc)
                  (if (<= op-ms4 #x3)
                      (multiple-value-bind (name val)
@@ -613,14 +617,14 @@
                                     :sub nil
                                     :hc (> result #x0f)))
                        1)
-                     (error "not implemented")))
+                     (unknown-instruction)))
                 ((_ #xe)
                  (if (<= op-ms4 #x3)
                      (let ((name (set-register op-ms4 (c e l a) (operand-1))))
                        (log-op "LD ~a, #x~x" name (operand-1))
                        2)
                      ;; #xCE ~ #xFE
-                     (error "not implemented")
+                     (unknown-instruction)
                  )))
 
               ;; (case opcode
