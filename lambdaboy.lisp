@@ -583,7 +583,11 @@
                                     :hc (> result #x0f)
                                     :carry (> result #xff)))
                        1)
-                     (unknown-instruction)))
+                     (case op-ms4
+                       (#xf (log-op "LD SP, HL")
+                            (setf (register-sp reg) (register-hl reg))
+                            1)
+                       (t (unknown-instruction)))))
                 ((_ #xa)
                  (if (<= op-ms4 #x3)
                      (multiple-value-bind (name val)
