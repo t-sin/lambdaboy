@@ -602,7 +602,14 @@
                      (let ((name (set-register op-ms4 (b d h (hl)) (operand-1))))
                        (log-op "LD ~a, #x~x" name (operand-1))
                        2)
-                     (ecase op-ms4
+                     (case op-ms4
+                       (#xc (log-op "ADD #x~x" (operand-1))
+                            (let ((result (+ (register-a reg) (operand-1))))
+                              (set-flags :zero (zerop result)
+                                         :sub nil
+                                         :hc (< result #x0f)
+                                         :carry (> result #xff))
+                              (setf (register-a reg) result)))
                        (#xd (log-op "SUB #x~x" (operand-1))
                             (let ((result (- (register-a reg) (operand-1))))
                               (set-flags :zero (zerop result)
