@@ -510,6 +510,29 @@
                        (log-op "LD A, ~a" name)
                            (setf (register-a reg) val)))
                  1)
+                ((#x8 _)
+                 (multiple-value-bind (name val)
+                     (select-register (logand #x7 op-ls4)
+                                      (b c d e h l (hl) a))
+                   (if (zerop (logand #x8 op-ls4))
+                       (progn
+                         (log-op "ADD A, ~a" name)
+                         (let ((result (+ (register-a reg) val)))
+                           (setf (register-a reg) result)
+                           (set-flags :zero (zerop result)
+                                      :sub nil
+                                      :hc (> result #xf))
+                                      :carry (> result #xff)))
+                       (progn
+                         (log-op "ADC A, ~a" name)
+                         (let ((result (+ (register-a reg) val
+                                          (if (register-flag-carry reg) 1 0))))
+                           (setf (register-a reg) result)
+                           (set-flags :zero (zerop result)
+                                      :sub nil
+                                      :hc (> result #xf))
+                                      :carry (> result #xff))))
+                   1))
                 ((#xa _)
                  (multiple-value-bind (name val)
                      (select-register (logand #x7 op-ls4)
