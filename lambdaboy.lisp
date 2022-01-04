@@ -613,7 +613,7 @@
                        (#xd (log-op "SUB #x~x" (operand-1))
                             (let ((result (- (register-a reg) (operand-1))))
                               (set-flags :zero (zerop result)
-                                         :sub 1
+                                         :sub t
                                          :hc (> result #x0f)
                                          :carry (minusp result))
                               (setf (register-a reg) result)))))
