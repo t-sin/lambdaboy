@@ -616,7 +616,8 @@
                                          :sub t
                                          :hc (> result #x0f)
                                          :carry (minusp result))
-                              (setf (register-a reg) result)))))
+                              (setf (register-a reg) result)))
+                       (t (unknown-instruction))))
                  2)
                 ((_ #x9)
                  (if (<= op-ms4 #x3)
