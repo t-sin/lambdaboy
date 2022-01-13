@@ -765,4 +765,4 @@
 (defun i8-as-integer (byte)
   (if (zerop (logand #x80 byte))
       byte
-      (1+ (- #xff byte))))
+      (- (1+ (- #xff byte)))))
