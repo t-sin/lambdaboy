@@ -283,9 +283,10 @@
          (op-ms4 (ash (logand opcode #xf0) -4))
          (op-ls4 (logand opcode #x0f)))
     (flet ((log-op (op &rest args)
-             (vom:debug "[PC:#x~4,'0x, SP:#x~4,'0x] op ~2,'0x: ~a"
+             (vom:debug "[PC:#x~4,'0x, SP:#x~4,'0x] op ~2,'0x: ~a~%    where ~s"
                         (register-pc reg) (register-sp reg)
-                        opcode (apply #'format nil op args)))
+                        opcode (apply #'format nil op args)
+                        reg))
            (operand-1 ()
              (memory-address mem (+ (register-pc reg) 1)))
            (operand-2 ()
