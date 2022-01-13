@@ -35,6 +35,15 @@
   ;; program counter
   (pc 0 :type (unsigned-byte 16)))
 
+(defmethod print-object ((reg register) stream)
+  (format stream "#(REGISTER :AF ~4,'0x :BC ~4,'0x :DE ~4,'0x :HL ~4,'0x :SP ~4,'0x :PC ~4,'0x)"
+          (register-af reg)
+          (register-bc reg)
+          (register-de reg)
+          (register-hl reg)
+          (register-sp reg)
+          (register-pc reg)))
+
 (defmacro make-accessors (two-char-reg)
   (let* ((name (symbol-name two-char-reg))
          (high-r (char name 0))
