@@ -616,7 +616,7 @@
                          (select-register op-ms4 (b d h (hl)))
                        (log-op "INC ~a" name)
                        (let ((result (1+ val)))
-                         (set-register op-ms4 (b d h (hl)) result)
+                         (set-register op-ms4 (b d h (hl)) (rem result #x100))
                          (set-flags :zero (> result #xff)
                                     :sub nil
                                     :hc (> result #x0f)))
@@ -709,7 +709,7 @@
                          (select-register op-ms4 (c e l a))
                        (log-op "INC ~a" name)
                        (let ((result (1+ val)))
-                         (set-register op-ms4 (c e l a) result)
+                         (set-register op-ms4 (c e l a) (rem result #x100))
                          (set-flags :zero (> result #xff)
                                     :sub nil
                                     :hc (> result #x0f)))
@@ -720,7 +720,7 @@
                      (multiple-value-bind (name val)
                          (select-register op-ms4 (c e l a))
                        (log-op "DEC ~a" name)
-                       (let ((result (1+ val)))
+                       (let ((result (1- val)))
                          (set-register op-ms4 (c e l a) result)
                          (set-flags :zero (zerop result)
                                     :sub t
