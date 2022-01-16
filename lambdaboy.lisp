@@ -780,15 +780,17 @@
   (loop
     (execute-1 gb)))
 
+(defparameter *gameboy* nil)
+(defparameter *rom* (make-array #x8000 :element-type '(unsigned-byte 8)))
+
 (defun start-gb (pathname)
-  (let ((gb (make-gameboy))
-        (rom (make-array #x8000 :element-type '(unsigned-byte 8))))
-    (with-open-file (in pathname :direction :input
-                        :element-type '(unsigned-byte 8))
-      (read-sequence rom in))
-    (load-rom gb rom)
-    (initialize-gameboy gb)
-    (run gb)))
+  (setf *gameboy* (make-gameboy))
+  (with-open-file (in pathname :direction :input
+                      :element-type '(unsigned-byte 8))
+    (read-sequence *rom* in))
+  (load-rom *gameboy* *rom*)
+  (initialize-gameboy *gameboy*)
+  (run *gameboy*))
 
 ;;;; util
 
