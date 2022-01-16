@@ -118,6 +118,10 @@
   (start 0 :type (unsigned-byte 16))
   (end 0 :type (unsigned-byte 16)))
 
+(defmethod print-object ((object range) stream)
+  (format stream "#(RANGE :START #x~4,'0x :END #x~4,'0x"
+          (range-start object) (range-end object)))
+
 (defun in-range-p (range n)
   (and (<= (range-start range) n)
        (<= n (range-end range))))
