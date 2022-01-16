@@ -755,25 +755,7 @@
                        1)
                      ;; #xCE ~ #xFE
                      (unknown-instruction)
-                 )))
-
-              ;; (case opcode
-              ;;   (#x91 (log-op "SUB C (A=#x~x, C=#x~x)" (register-a reg) (register-c reg))
-              ;;         (let ((result (incf (register-a reg) (register-c reg))))
-              ;;           (setf (register-a reg) result)
-              ;;           (set-flags :zero (zerop result)
-              ;;                      :sub t
-              ;;                      :hc (> result #x0f)
-              ;;                      :carry (minusp result)))
-              ;;         1)
-              ;;   (#xff (log-op "RST 38H")
-              ;;         (let ((addr (8bit->16bit (memory-address mem #x0038)
-              ;;                                  (memory-address mem (1+ #x0038)))))
-              ;;           (op-call reg mem addr))
-              ;;         0)
-              ;;   (t (error "unknown instruction: #x~x as pc = #x~x"
-              ;;             opcode (register-pc (gameboy-register gb)))))
-))
+                 )))))
         (incf (register-pc reg) pc-diff)))))
 
 (defun run (gb)
