@@ -616,7 +616,7 @@
                      (multiple-value-bind (name val)
                          (select-register op-ms4 (bc de hl sp))
                        (log-op "INC ~a" name)
-                       (set-register op-ms4 (bc de hl sp) (1+ val))
+                       (set-register op-ms4 (bc de hl sp) (rem (1+ val) #x10000))
                        0)
                      (unknown-instruction)))
                 ((_ #x4)
