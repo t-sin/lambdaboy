@@ -141,6 +141,26 @@
   (array nil :type (array (unsigned-byte 8)))
   (write-hook nil :type function))
 
+(defmethod print-object ((object memory-block) stream)
+  (format stream "#(MEMORY-BLOCK ")
+  (format stream ":NAME ~s :RANGE ~s :WRITE-HOOK ~s"
+          (memory-block-name object)
+          (memory-block-range object)
+          (memory-block-write-hook object))
+  (format stream ":ARRAY #(")
+  (loop
+    :with first-byte := t
+    :with count := 0
+    :for b :across (memory-block-array object)
+    :do (if first-byte
+            (setf first-byte nil)
+            (write-char #\space stream))
+    :do (format stream "#x~2,'0x" b)
+    :do (cond ((= count 7) (write-char #\space stream))
+              ((= count 15) (terpri stream)))
+    :do (setf count (rem (1+ count) 16)))
+  (format stream "))"))
+
 (defstruct (memory (:constructor make-memory*))
   (map (vector) :type (vector memory-block)))
 
