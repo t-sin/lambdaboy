@@ -136,6 +136,7 @@
         (<= s1 e2))))
 
 (defstruct memory-block
+  (name "NIL" :type string)
   (range nil :type range)
   (array nil :type (array (unsigned-byte 8)))
   (write-hook nil :type function))
@@ -155,8 +156,9 @@
 
 (flet ((do-nothing (addr val)
          (declare (ignore addr val))))
-  (defun map-memory* (mem s e &optional (fn #'do-nothing))
-    (let ((block (make-memory-block :range (make-range :start s :end e)
+  (defun map-memory* (mem name s e &optional (fn #'do-nothing))
+    (let ((block (make-memory-block :name name
+                                    :range (make-range :start s :end e)
                                     :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 8))
                                     :write-hook fn)))
       (map-memory mem block))))
@@ -186,29 +188,29 @@
 (defun make-memory ()
   (let ((mem (make-memory*)))
     ;; ROM cartridge bank 00 (16KiB). its usually fixed bank.
-    (map-memory* mem #x0000 #x3fff)
+    (map-memory* mem "ROM cartridge bank" #x0000 #x3fff)
     ;; ROM cartridge bank 01 ~ nn (16KiB). its switchable bank.
-    (map-memory* mem #x4000 #x7fff)
+    (map-memory* mem "ROM cartridge bank 01 ~ nn" #x4000 #x7fff)
     ;; Video RAM (8KiB).
-    (map-memory* mem #x8000 #x9fff)
+    (map-memory* mem "Video RAM" #x8000 #x9fff)
     ;; External RAM (8KiB).
-    (map-memory* mem #xa000 #xbfff)
+    (map-memory* mem "External RAM" #xa000 #xbfff)
     ;; 4KiB Work RAM.
-    (map-memory* mem #xc000 #xcfff)
+    (map-memory* mem "Work RAM 1" #xc000 #xcfff)
     ;; 4KiB Work RAM 2.
-    (map-memory* mem #xd000 #xdfff)
+    (map-memory* mem "Work RAM 2" #xd000 #xdfff)
     ;; [Prohibited] Echo RAM: Mirror of #xc000 ~ #xdfff.
-    (map-memory* mem #xe000 #xfdff)
+    (map-memory* mem "[Prohibited] Echo RAM" #xe000 #xfdff)
     ;; Sprite attribute table.
-    (map-memory* mem #xfe00 #xfe9f)
+    (map-memory* mem "Sprite attribute table" #xfe00 #xfe9f)
     ;; [Prohibited] Not usable.
-    (map-memory* mem #xfea0 #xfeff)
+    (map-memory* mem "[Prohibited] Not usable" #xfea0 #xfeff)
     ;; IO registers
-    (map-memory* mem #xff00 #xff7f)
+    (map-memory* mem "IO registers" #xff00 #xff7f)
     ;; High RAM
-    (map-memory* mem #xff80 #xfffe)
+    (map-memory* mem "High RAM" #xff80 #xfffe)
     ;; Interrupt enable register
-    (map-memory* mem #xffff #xffff)
+    (map-memory* mem "Interrupt enable register" #xffff #xffff)
     mem))
 
 ;;; gameboy
