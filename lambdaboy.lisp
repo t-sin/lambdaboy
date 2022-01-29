@@ -569,6 +569,29 @@
                                       :hc (> result #xf))
                                       :carry (> result #xff))))
                    0))
+                ((#x9 _)
+                 (multiple-value-bind (name val)
+                     (select-register (logand #x7 op-ls4)
+                                      (b c d e h l (hl) a))
+                   (if (zerop (logand #x8 op-ls4))
+                       (progn
+                         (log-op "SUB A, ~a" name)
+                         (let ((result (- (register-a reg) val)))
+                           (setf (register-a reg) result)
+                           (set-flags :zero (zerop result)
+                                      :sub t
+                                      :hc (< result #xf))
+                                      :carry (minusp result)))
+                       (progn
+                         (log-op "SBC A, ~a" name)
+                         (let ((result (- (register-a reg) val
+                                          (if (register-flag-carry reg) 1 0))))
+                           (setf (register-a reg) result)
+                           (set-flags :zero (zerop result)
+                                      :sub t
+                                      :hc (< result #xf))
+                                      :carry (minusp result))))
+                   0))
                 ((#xa _)
                  (multiple-value-bind (name val)
                      (select-register (logand #x7 op-ls4)
