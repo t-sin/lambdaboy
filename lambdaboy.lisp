@@ -206,6 +206,7 @@
 (defun (setf memory-address) (val mem addr)
   (let ((b (find-block mem addr)))
     (when b
+      (funcall (memory-block-write-hook b) addr val)
       (let ((offset (- addr (range-start (memory-block-range b)))))
         (when (memory-block-write-hook b)
           (funcall (memory-block-write-hook b) offset val))
@@ -227,6 +228,10 @@
     (map-memory* mem #xc000 #xcfff :work-ram-1 "Work RAM 1")
     ;; 4KiB Work RAM 2.
     (map-memory* mem #xd000 #xdfff :work-ram-2 "Work RAM 2")
+    ;;              (lambda (addr val)
+    ;;                (when (= addr #xd803)
+    ;;                  (format t "write value ~2,'0x (~c) at addr ~4,'0x ~%"
+    ;;                          val (code-char val) addr))))
     ;; [Prohibited] Echo RAM: Mirror of #xc000 ~ #xdfff.
     (map-memory* mem #xe000 #xfdff :echo-ram "[Prohibited] Echo RAM")
     ;; Sprite attribute table.
