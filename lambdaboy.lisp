@@ -269,6 +269,8 @@
               (aref rom addr))))
 
 (defun op-call (reg mem addr)
+  (when (or (= addr #x3ecc) (= addr #xcc3e))
+    (print "std_print!!!"))
   (let ((sp (incf (register-sp reg) -2))
         (pc (1+ (register-pc reg))))
     (setf (memory-address mem sp) (logand pc #x00ff)
