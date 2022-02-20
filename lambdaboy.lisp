@@ -909,3 +909,17 @@
     :do (cond ((zerop (mod n #x10)) (format t "~%") (setf n 0))
               ((zerop (mod n #x08)) (format t " ")))
     :do (incf n)))
+
+
+#|
+(let ((gb (make-gameboy)))
+  (setf *gameboy* gb)
+  (vom:config t :warn)
+  (flet ((hook (gb)
+           (declare (ignore gb))
+           (vom:config t :debug)))
+    ;; このあたりのアドレスで正常なRET後なぞのRET NZが走っている…
+    ;; コード的にはここ: https://github.com/retrio/gb-test-roms/blob/c240dd7d700e5c0b00a7bbba52b53e4ee67b5f15/cpu_instrs/source/common/runtime.s#L96
+    (set-breakpoint gb #xc0a2 :hook #'hook))
+  (start-gb "/home/grey/opt/gb-test-roms/blargg/cpu_instrs/individual/06-ld r,r.gb" gb))
+|#
