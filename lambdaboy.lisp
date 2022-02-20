@@ -136,15 +136,17 @@
         (<= s1 e2))))
 
 (defstruct memory-block
-  (name "NIL" :type string)
+  (name :block :type keyword)
+  (description "NIL" :type string)
   (range nil :type range)
   (array nil :type (array (unsigned-byte 8)))
   (write-hook nil :type function))
 
 (defmethod print-object ((object memory-block) stream)
   (format stream "#(MEMORY-BLOCK ")
-  (format stream ":NAME ~s :RANGE ~s :WRITE-HOOK ~s"
+  (format stream ":NAME ~s :DESCRIPTION ~s :RANGE ~s :WRITE-HOOK ~s"
           (memory-block-name object)
+          (memory-block-description object)
           (memory-block-range object)
           (memory-block-write-hook object))
   (format stream ":ARRAY #(")
@@ -176,8 +178,9 @@
 
 (flet ((do-nothing (addr val)
          (declare (ignore addr val))))
-  (defun map-memory* (mem name s e &optional (fn #'do-nothing))
+  (defun map-memory* (mem name desc s e &optional (fn #'do-nothing))
     (let ((block (make-memory-block :name name
+                                    :description desc
                                     :range (make-range :start s :end e)
                                     :array (make-array (1+ (- e s)) :element-type '(unsigned-byte 8))
                                     :write-hook fn)))
@@ -188,6 +191,11 @@
     :for b :across (memory-map mem)
     :do (when (in-range-p (memory-block-range b) addr)
           (return-from find-block b))))
+
+(defun list-block (mem)
+  (loop
+    :for block :across (memory-map mem)
+    :collect block))
 
 (defun memory-address (mem addr)
   (let ((b (find-block mem addr)))
@@ -208,29 +216,29 @@
 (defun make-memory ()
   (let ((mem (make-memory*)))
     ;; ROM cartridge bank 00 (16KiB). its usually fixed bank.
-    (map-memory* mem "ROM cartridge bank" #x0000 #x3fff)
+    (map-memory* mem :cartridge-1 "ROM cartridge bank" #x0000 #x3fff)
     ;; ROM cartridge bank 01 ~ nn (16KiB). its switchable bank.
-    (map-memory* mem "ROM cartridge bank 01 ~ nn" #x4000 #x7fff)
+    (map-memory* mem :cartridge-2 "ROM cartridge bank 01 ~ nn" #x4000 #x7fff)
     ;; Video RAM (8KiB).
-    (map-memory* mem "Video RAM" #x8000 #x9fff)
+    (map-memory* mem :video-ram "Video RAM" #x8000 #x9fff)
     ;; External RAM (8KiB).
-    (map-memory* mem "External RAM" #xa000 #xbfff)
+    (map-memory* mem :extra-ram "External RAM" #xa000 #xbfff)
     ;; 4KiB Work RAM.
-    (map-memory* mem "Work RAM 1" #xc000 #xcfff)
+    (map-memory* mem :work-ram-1 "Work RAM 1" #xc000 #xcfff)
     ;; 4KiB Work RAM 2.
-    (map-memory* mem "Work RAM 2" #xd000 #xdfff)
+    (map-memory* mem :work-ram-2 "Work RAM 2" #xd000 #xdfff)
     ;; [Prohibited] Echo RAM: Mirror of #xc000 ~ #xdfff.
-    (map-memory* mem "[Prohibited] Echo RAM" #xe000 #xfdff)
+    (map-memory* mem :echo-ram "[Prohibited] Echo RAM" #xe000 #xfdff)
     ;; Sprite attribute table.
-    (map-memory* mem "Sprite attribute table" #xfe00 #xfe9f)
+    (map-memory* mem :sprite-attribute-table "Sprite attribute table" #xfe00 #xfe9f)
     ;; [Prohibited] Not usable.
-    (map-memory* mem "[Prohibited] Not usable" #xfea0 #xfeff)
+    (map-memory* mem :dont-use "[Prohibited] Not usable" #xfea0 #xfeff)
     ;; IO registers
-    (map-memory* mem "IO registers" #xff00 #xff7f)
+    (map-memory* mem :io-registers "IO registers" #xff00 #xff7f)
     ;; High RAM
-    (map-memory* mem "High RAM" #xff80 #xfffe)
+    (map-memory* mem :high-ram "High RAM" #xff80 #xfffe)
     ;; Interrupt enable register
-    (map-memory* mem "Interrupt enable register" #xffff #xffff)
+    (map-memory* mem :interrupt-enable-register "Interrupt enable register" #xffff #xffff)
     mem))
 
 ;;; gameboy
