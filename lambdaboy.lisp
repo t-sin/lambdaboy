@@ -246,12 +246,44 @@
     (map-memory* mem #xffff #xffff :interrupt-enable-register "Interrupt enable register")
     mem))
 
+;;;; debugger
+
+(defstruct breakpoint
+  (enabled t :type (member t nil))
+  (addr #x0000 :type (unsigned-byte 16))
+  (condition #'(lambda (gb) (declare (ignorable gb)) t) :type function)
+  (hook #'(lambda (gb) (declare (ignorable gb)) t) :type function))
+
+(defstruct debugger
+  (breakpoints (make-array 0 :element-type 'breakpoint)
+               :type (vector breakpoint))
+  (break-p nil :type (member t nil)))
+
 ;;; gameboy
 
 (defstruct gameboy
   (register (make-register) :type register)
   (memory (make-memory) :type memory)
-  (interrupt-enabled t :type (member t nil)))
+  (interrupt-enabled t :type (member t nil))
+  (debugger (make-debugger) :type debugger))
+
+(defun on-breakpoint-p (gb)
+  (let* ((reg (gameboy-register gb))
+         (pc (register-pc reg))
+         (bps (debugger-breakpoints (gameboy-debugger gb))))
+    (let ((bp (find pc bps :key #'breakpoint-addr)))
+      (values (and bp
+                   (breakpoint-enabled bp)
+                   (funcall (breakpoint-condition bp) gb))
+              bp))))
+
+(defun test-on-breakpoint (gb)
+  (multiple-value-bind (on-breakpoint bp)
+      (on-breakpoint-p gb)
+    (when on-breakpoint
+      (setf (breakpoint-enabled bp) nil)
+      (setf (debugger-break-p (gameboy-debugger gb)) t)
+      (funcall (breakpoint-hook bp) gb))))
 
 ;; execute power-up sequence
 (defun initialize-gameboy (gb)
@@ -326,6 +358,7 @@
 ;; cf. - https://gbdev.io/pandocs/CPU_Instruction_Set.html
 ;;     - https://gbdev.io/gb-opcodes/optables/
 (defun execute-1 (gb)
+  (setf (debugger-break-p (gameboy-debugger gb)) nil)
   (let* ((reg (gameboy-register gb))
          (mem (gameboy-memory gb))
          (pc (register-pc reg))
@@ -333,6 +366,11 @@
          (op-ms4 (ash (logand opcode #xf0) -4))
          (op-ls4 (logand opcode #x0f)))
     (incf (register-pc reg))
+
+    (when (test-on-breakpoint gb)
+      (incf (register-pc reg) -1)
+      (return-from execute-1))
+
     (flet ((log-op (op &rest args)
              (vom:debug "[PC:#x~4,'0x, SP:#x~4,'0x] op ~2,'0x: ~a"
                         (register-pc reg) (register-sp reg)
@@ -824,13 +862,16 @@
 
 (defun run (gb)
   (loop
-    (execute-1 gb)))
+    :do (execute-1 gb)
+    :when (debugger-break-p (gameboy-debugger gb))
+    :do (return-from run)))
 
 (defparameter *gameboy* nil)
 (defparameter *rom* (make-array #x8000 :element-type '(unsigned-byte 8)))
 
-(defun start-gb (pathname)
-  (setf *gameboy* (make-gameboy))
+(defun start-gb (pathname &optional gb)
+  (unless gb
+    (setf *gameboy* (make-gameboy)))
   (with-open-file (in pathname :direction :input
                       :element-type '(unsigned-byte 8))
     (read-sequence *rom* in))
@@ -849,6 +890,16 @@
       (- (1+ (- #xff byte)))))
 
 ;;;; debug util
+(flet ((f (gb)
+         (declare (ignorable gb))
+         t))
+  (defun set-breakpoint (gb addr &key (condition #'f) (hook #'f))
+    (let* ((bp (make-breakpoint :addr addr :condition condition :hook hook))
+           (new-bps (concatenate '(vector breakpoint)
+                                 (debugger-breakpoints (gameboy-debugger gb))
+                                 (vector bp))))
+      (setf (debugger-breakpoints (gameboy-debugger gb)) new-bps))))
+
 (defun dump-memory (offset length)
   (loop
     :for addr :from offset :below (+ offset length)
