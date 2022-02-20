@@ -845,3 +845,14 @@
   (if (zerop (logand #x80 byte))
       byte
       (- (1+ (- #xff byte)))))
+
+;;;; debug util
+(defun dump-memory (offset length)
+  (loop
+    :for addr :from offset :below (+ offset length)
+    :with n := 1
+    :for ch := (memory-address (gameboy-memory *gameboy*) addr)
+    :do (format t "~2,'0x " ch)
+    :do (cond ((zerop (mod n #x10)) (format t "~%") (setf n 0))
+              ((zerop (mod n #x08)) (format t " ")))
+    :do (incf n)))
