@@ -309,6 +309,36 @@
                opcode (apply #'format nil opstr args))
     (vom:debug1 "with ~s" reg)))
 
+
+(defun inst-nop (gb opcode)
+  (log-inst gb opcode "NOP")
+  0)
+
+(defun inst-jump (gb opcode operand cond)
+  (let ((reg (gameboy-register gb)))
+    (ecase cond
+      ((nil)
+       (let ((offset (i8-as-integer operand)))
+         (log-inst gb opcode "JR #x~x" offset)
+         (incf (register-pc reg) offset))
+       0)
+      (:non-zero
+       (let ((offset (i8-as-integer operand)))
+         (log-inst gb opcode "JR NZ, #x~x" offset)
+         (if (not (register-flag-zero reg))
+             (progn
+               (incf (register-pc reg) offset)
+               0)
+             1)))
+      (:zero
+       (let ((offset (i8-as-integer operand)))
+         (log-inst gb opcode "JR Z, #x~x" offset)
+         (if (register-flag-zero reg)
+             (progn
+               (incf (register-pc reg) offset)
+               0)
+             1))))))
+
 (defun inst-call (reg mem addr)
   (when (or (= addr #x3ecc) (= addr #xcc3e))
     (print "std_print!!!"))
@@ -401,30 +431,10 @@
                (register-flag-carry reg) carry)))
       (let ((pc-diff
               (4bit-case (op-ms4 op-ls4)
-                ((#x0 #x0)
-                 (log-inst gb opcode "NOP")
-                 0)
-                ((#x1 #x8)
-                 (let ((offset (i8-as-integer (operand-1))))
-                   (log-inst gb opcode "JR #x~x" offset)
-                   (incf (register-pc reg) (1+ offset))
-                   0))
-                ((#x2 #x0)
-                 (let ((offset (i8-as-integer (operand-1))))
-                   (log-inst gb opcode "JR NZ, #x~x" offset)
-                   (if (not (register-flag-zero reg))
-                       (progn
-                         (incf (register-pc reg) (1+ offset))
-                         0)
-                       1)))
-                ((#x2 #x8)
-                 (let ((offset (i8-as-integer (operand-1))))
-                   (log-inst gb opcode "JR Z, #x~x" offset)
-                   (if (register-flag-zero reg)
-                       (progn
-                         (incf (register-pc reg) (1+ offset))
-                         0)
-                       1)))
+                ((#x0 #x0) (inst-nop gb opcode))
+                ((#x1 #x8) (inst-jump gb opcode (operand-1) nil))
+                ((#x2 #x0) (inst-jump gb opcode (operand-1) :non-zero))
+                ((#x2 #x8) (inst-jump gb opcode (operand-1) :zero))
                 ((#xc #x3)
                  (let ((a16 (8bit->16bit (operand-1) (operand-2))))
                    (log-inst gb opcode "JP #x~x" a16)
