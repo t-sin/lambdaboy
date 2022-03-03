@@ -337,6 +337,14 @@
              (progn
                (incf (register-pc reg) offset)
                0)
+             1)))
+      (:carry
+       (let ((offset (i8-as-integer operand)))
+         (log-inst gb opcode "JR C, #x~x" offset)
+         (if (register-flag-carry reg)
+             (progn
+               (incf (register-pc reg) offset)
+               0)
              1))))))
 
 (defun inst-call (reg mem addr)
@@ -554,14 +562,7 @@
                               :hc (> result #x0f)
                               :carry (minusp result)))
                  1)
-                ((#x3 #x8)
-                 (let ((offset (i8-as-integer (operand-1))))
-                   (log-inst gb opcode "JR C, #x~x" offset)
-                   (if (register-flag-carry reg)
-                       (progn
-                         (incf (register-pc reg) offset)
-                         0)
-                       1)))
+                ((#x3 #x8) (inst-jump gb opcode (operand-1) :carry))
                 ((#x4 _)
                  (multiple-value-bind (name val)
                      (select-register (logand #x7 op-ls4)
