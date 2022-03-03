@@ -809,7 +809,7 @@
                                    (#xe #x20)
                                    (#xf #x30))))
                        (log-inst gb opcode "RST #x~2,'0x" addr)
-                       (op-call reg mem addr)
+                       (inst-call reg mem addr)
                        0)))
                 ((_ #x9)
                  (if (<= op-ms4 #x3)
