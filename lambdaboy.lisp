@@ -316,7 +316,8 @@
         (pc (1+ (register-pc reg))))
     (setf (memory-address mem sp) (logand pc #x00ff)
           (memory-address mem (1+ sp)) (ash (logand pc #xff00) -8)))
-  (setf (register-pc reg) addr))
+  (setf (register-pc reg) addr)
+  0)
 
 ;;;; execution
 
@@ -511,8 +512,7 @@
                 ((#xc #xd)
                  (let ((a16 (8bit->16bit (operand-1) (operand-2))))
                    (log-inst gb opcode "CALL #x~x" a16)
-                   (inst-call reg mem a16))
-                 0)
+                   (inst-call reg mem a16)))
                 ((#xe #x0)
                  (log-inst gb opcode "LDH (#x~x), A" (operand-1))
                  (setf (memory-address mem (+ #xff00 (operand-1)))
