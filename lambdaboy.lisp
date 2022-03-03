@@ -362,6 +362,21 @@
   (setf (register-pc reg) addr)
   0)
 
+(defun inst-ret (gb opcode cond)
+  (let ((reg (gameboy-register gb))
+        (mem (gameboy-memory gb)))
+    (ecase cond
+      (:zero
+       (log-inst gb opcode "RET Z")
+       (if (register-flag-zero reg)
+           (let* ((addr (memory-address mem (register-sp reg)))
+                  (addr (logior addr
+                                (ash (memory-address mem (1+ (register-sp reg))) 8))))
+             (incf (register-sp reg) 2)
+             (setf (register-pc reg) addr)
+             0)
+           1)))))
+
 ;;;; execution
 
 (defmacro 4bit-case ((ms4 ls4) &body clauses)
@@ -449,15 +464,7 @@
                 ((#x2 #x0) (inst-jump gb opcode (operand-1) :non-zero))
                 ((#x2 #x8) (inst-jump gb opcode (operand-1) :zero))
                 ((#xc #x3) (inst-jump gb opcode (operand-1) nil (operand-2)))
-                ((#xc #x8)
-                 (log-inst gb opcode "RET Z")
-                 (when (register-flag-zero reg)
-                   (let* ((addr (memory-address mem (register-sp reg)))
-                          (addr (logior addr
-                                        (ash (memory-address mem (1+ (register-sp reg))) 8))))
-                     (incf (register-sp reg) 2)
-                     (setf (register-pc reg) addr)))
-                 0)
+                ((#xc #x8) (inst-ret gb opcode :zero))
                 ((#xc #x9)
                  (log-inst gb opcode "RET")
                  (let* ((addr (memory-address mem (register-sp reg)))
