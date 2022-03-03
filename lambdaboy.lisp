@@ -366,6 +366,14 @@
   (let ((reg (gameboy-register gb))
         (mem (gameboy-memory gb)))
     (ecase cond
+      ((nil)
+       (log-inst gb opcode "RET")
+       (let* ((addr (memory-address mem (register-sp reg)))
+              (addr (logior addr
+                            (ash (memory-address mem (1+ (register-sp reg))) 8))))
+         (incf (register-sp reg) 2)
+         (setf (register-pc reg) addr))
+       0)
       (:non-zero
        (log-inst gb opcode "RET NZ")
        (if (not (register-flag-zero reg))
@@ -475,14 +483,7 @@
                 ((#x2 #x8) (inst-jump gb opcode (operand-1) :zero))
                 ((#xc #x3) (inst-jump gb opcode (operand-1) nil (operand-2)))
                 ((#xc #x8) (inst-ret gb opcode :zero))
-                ((#xc #x9)
-                 (log-inst gb opcode "RET")
-                 (let* ((addr (memory-address mem (register-sp reg)))
-                        (addr (logior addr
-                                      (ash (memory-address mem (1+ (register-sp reg))) 8))))
-                   (incf (register-sp reg) 2)
-                   (setf (register-pc reg) addr))
-                 0)
+                ((#xc #x9) (inst-ret gb opcode nil))
                 ((#xc #xb)
                  (let* ((pc (incf (register-pc reg)))
                         (opcode (memory-address mem pc))
