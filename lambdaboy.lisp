@@ -302,6 +302,19 @@
 
 ;;;; instruction
 
+(defun set-flags (reg &key (zero nil zero-p)
+                           (sub nil sub-p)
+                           (hc nil hc-p)
+                           (carry nil carry-p))
+  (when zero-p
+    (setf (register-flag-zero reg) zero))
+  (when sub-p
+    (setf (register-flag-subtract reg) sub))
+  (when hc-p
+    (register-flag-half-carry reg) hc)
+  (when carry-p
+    (register-flag-carry reg) carry))
+
 (defun log-inst (gb opcode opstr &rest args)
   (let ((reg (gameboy-register gb)))
     (vom:debug "[PC:#x~4,'0x, SP:#x~4,'0x] op ~2,'0x: ~a"
@@ -438,6 +451,29 @@
     (incf (register-sp reg) 2))
   1)
 
+(defun inst-inc-dec (gb opcode reg-name inc-p 16bit-p)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (val (if (listp reg-name)
+                  (memory-address mem (slot-value reg (first reg-name)))
+                  (slot-value reg reg-name))))
+    (log-inst gb opcode (if inc-p "INC ~a" "DEC ~a") reg-name)
+    (let ((result (if inc-p (1+ val) (1- val))))
+      (if (listp reg-name)
+          (setf (memory-address mem (slot-value reg (first reg-name)))
+                (rem result (if 16bit-p #x10000 #x100)))
+          (setf (slot-value reg reg-name) (rem result (if 16bit-p #x10000 #x100))))
+      (unless 16bit-p
+        (if inc-p
+            (set-flags reg :zero (> result #xff)
+                       :sub nil
+                       :hc (> result #x0f))
+            (set-flags reg :zero (zerop result)
+                       :sub t
+                       :hc (< result #x0f)
+                       :carry nil)))))
+  1)
+
 ;;;; execution
 
 (defmacro 4bit-case ((ms4 ls4) &body clauses)
@@ -505,19 +541,7 @@
     (flet ((operand-1 ()
              (memory-address mem (+ (register-pc reg) 0)))
            (operand-2 ()
-             (memory-address mem (+ (register-pc reg) 1)))
-           (set-flags (&key (zero nil zero-p)
-                            (sub nil sub-p)
-                            (hc nil hc-p)
-                            (carry nil carry-p))
-             (when zero-p
-               (setf (register-flag-zero reg) zero))
-             (when sub-p
-               (setf (register-flag-subtract reg) sub))
-             (when hc-p
-               (register-flag-half-carry reg) hc)
-             (when carry-p
-               (register-flag-carry reg) carry)))
+             (memory-address mem (+ (register-pc reg) 1))))
       (let ((pc-diff
               (4bit-case (op-ms4 op-ls4)
                 ((#x0 #x0) (inst-nop gb opcode))
@@ -542,11 +566,11 @@
                                                       (ash val -8))))
                                   (log-inst gb opcode "SWAP ~a" name)
                                   (set-register idx (b c d e h l (hl) a) result)
-                                  (set-flags :zero (zerop result) :sub nil :hc nil :carry nil))
+                                  (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil))
                                 (let ((result (ash val -1)))
                                   (log-inst gb opcode "SRL ~a" name)
                                   (set-register idx (b c d e h l (hl) a) result)
-                                  (set-flags :zero (zerop result) :sub nil :hc nil :carry (minusp result)))))
+                                  (set-flags reg :zero (zerop result) :sub nil :hc nil :carry (minusp result)))))
                           0))
                        ((#x8 _) (inst-set-bit gb opcode 0 t))
                        ((#x9 _) (inst-set-bit gb opcode 2 t))
@@ -586,7 +610,7 @@
                 ((#xf #xe)
                  (log-inst gb opcode "CP #x~x " (operand-1))
                  (let ((result (- (register-a reg) (operand-1))))
-                   (set-flags :zero (zerop result)
+                   (set-flags reg :zero (zerop result)
                               :sub t
                               :hc (> result #x0f)
                               :carry (minusp result)))
@@ -654,7 +678,7 @@
                          (log-inst gb opcode "ADD A, ~a" name)
                          (let ((result (+ (register-a reg) val)))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result)
+                           (set-flags reg :zero (zerop result)
                                       :sub nil
                                       :hc (> result #xf))
                                       :carry (> result #xff)))
@@ -663,7 +687,7 @@
                          (let ((result (+ (register-a reg) val
                                           (if (register-flag-carry reg) 1 0))))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result)
+                           (set-flags reg :zero (zerop result)
                                       :sub nil
                                       :hc (> result #xf))
                                       :carry (> result #xff))))
@@ -677,7 +701,7 @@
                          (log-inst gb opcode "SUB A, ~a" name)
                          (let ((result (- (register-a reg) val)))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result)
+                           (set-flags reg :zero (zerop result)
                                       :sub t
                                       :hc (< result #xf))
                                       :carry (minusp result)))
@@ -686,7 +710,7 @@
                          (let ((result (- (register-a reg) val
                                           (if (register-flag-carry reg) 1 0))))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result)
+                           (set-flags reg :zero (zerop result)
                                       :sub t
                                       :hc (< result #xf))
                                       :carry (minusp result))))
@@ -700,12 +724,12 @@
                          (log-inst gb opcode "AND ~a" name)
                          (let ((result (logand (register-a reg) val)))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result) :sub nil :hc t :carry nil)))
+                           (set-flags reg :zero (zerop result) :sub nil :hc t :carry nil)))
                        (progn
                          (log-inst gb opcode "XOR ~a" name)
                          (let ((result (logxor (register-a reg) val)))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result) :sub nil :hc nil :carry nil))))
+                           (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil))))
                    0))
                 ((#xb _)
                  (multiple-value-bind (name val)
@@ -716,11 +740,11 @@
                          (log-inst gb opcode "OR ~a" name)
                          (let ((result (logior (register-a reg) val)))
                            (setf (register-a reg) result)
-                           (set-flags :zero (zerop result) :sub nil :hc nil :carry nil)))
+                           (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil)))
                        (progn
                          (log-inst gb opcode "CP ~a" name)
                          (let ((result (- (register-a reg) val)))
-                           (set-flags :zero (zerop result)
+                           (set-flags reg :zero (zerop result)
                                       :sub t
                                       :hc (> result #x0f)
                                       :carry (minusp result)))))
@@ -745,36 +769,27 @@
                      (unknown-instruction)))
                 ((_ #x3)
                  (if (<= op-ms4 #x3)
-                     (multiple-value-bind (name val)
-                         (select-register op-ms4 (bc de hl sp))
-                       (log-inst gb opcode "INC ~a" name)
-                       (set-register op-ms4 (bc de hl sp) (rem (1+ val) #x10000))
-                       0)
+                     (ecase op-ms4
+                       (#x0 (inst-inc-dec gb opcode 'bc t t))
+                       (#x1 (inst-inc-dec gb opcode 'de t t))
+                       (#x2 (inst-inc-dec gb opcode 'hl t t))
+                       (#x3 (inst-inc-dec gb opcode 'sp t t)))
                      (unknown-instruction)))
                 ((_ #x4)
                  (if (<= op-ms4 #x3)
-                     (multiple-value-bind (name val)
-                         (select-register op-ms4 (b d h (hl)))
-                       (log-inst gb opcode "INC ~a" name)
-                       (let ((result (1+ val)))
-                         (set-register op-ms4 (b d h (hl)) (rem result #x100))
-                         (set-flags :zero (> result #xff)
-                                    :sub nil
-                                    :hc (> result #x0f)))
-                       0)
+                     (ecase op-ms4
+                       (#x0 (inst-inc-dec gb opcode 'b t nil))
+                       (#x1 (inst-inc-dec gb opcode 'd t nil))
+                       (#x2 (inst-inc-dec gb opcode 'h t nil))
+                       (#x3 (inst-inc-dec gb opcode '(hl) t nil)))
                      (unknown-instruction)))
                 ((_ #x5)
                  (if (<= op-ms4 #x3)
-                     (multiple-value-bind (name val)
-                         (select-register op-ms4 (b d h (hl)))
-                       (log-inst gb opcode "DEC ~a" name)
-                       (let ((result (1- val)))
-                         (set-register op-ms4 (b d h (hl)) result)
-                         (set-flags :zero (zerop result)
-                                    :sub t
-                                    :hc (< result #x0f)
-                                    :carry (minusp result)))
-                       0)
+                     (ecase op-ms4
+                       (#x0 (inst-inc-dec gb opcode 'b nil nil))
+                       (#x1 (inst-inc-dec gb opcode 'd nil nil))
+                       (#x2 (inst-inc-dec gb opcode 'h nil nil))
+                       (#x3 (inst-inc-dec gb opcode '(hl) nil nil)))
                      (multiple-value-bind (name val)
                          (select-register (- op-ms4 #xc) (bc de hl af))
                        (log-inst gb opcode "PUSH ~a" name)
@@ -791,14 +806,14 @@
                      (case op-ms4
                        (#xc (log-inst gb opcode "ADD #x~x" (operand-1))
                             (let ((result (+ (register-a reg) (operand-1))))
-                              (set-flags :zero (zerop result)
+                              (set-flags reg  :zero (zerop result)
                                          :sub nil
                                          :hc (< result #x0f)
                                          :carry (> result #xff))
                               (setf (register-a reg) result)))
                        (#xd (log-inst gb opcode "SUB #x~x" (operand-1))
                             (let ((result (- (register-a reg) (operand-1))))
-                              (set-flags :zero (zerop result)
+                              (set-flags reg :zero (zerop result)
                                          :sub t
                                          :hc (> result #x0f)
                                          :carry (minusp result))
@@ -823,7 +838,7 @@
                        (log-inst gb opcode "ADD HL, ~a" name)
                        (let ((result (+ (register-hl reg) val)))
                          (setf (register-a reg) result)
-                         (set-flags :zero (zerop result)
+                         (set-flags reg :zero (zerop result)
                                     :sub nil
                                     :hc (> result #x0f)
                                     :carry (> result #xff)))
@@ -849,36 +864,27 @@
                      (unknown-instruction)))
                 ((_ #xb)
                  (if (<= op-ms4 #x3)
-                     (multiple-value-bind (name val)
-                         (select-register op-ms4 (bc de hl sp))
-                       (log-inst gb opcode "DEC ~a" name)
-                       (set-register op-ms4 (bc de hl sp) (1- val))
-                       0)
+                     (ecase op-ms4
+                       (#x0 (inst-inc-dec gb opcode 'bc nil t))
+                       (#x1 (inst-inc-dec gb opcode 'de nil t))
+                       (#x2 (inst-inc-dec gb opcode 'hl nil t))
+                       (#x3 (inst-inc-dec gb opcode 'sp nil t)))
                      (unknown-instruction)))
                 ((_ #xc)
                  (if (<= op-ms4 #x3)
-                     (multiple-value-bind (name val)
-                         (select-register op-ms4 (c e l a))
-                       (log-inst gb opcode "INC ~a" name)
-                       (let ((result (1+ val)))
-                         (set-register op-ms4 (c e l a) (rem result #x100))
-                         (set-flags :zero (> result #xff)
-                                    :sub nil
-                                    :hc (> result #x0f)))
-                       0)
+                     (ecase op-ms4
+                       (#x0 (inst-inc-dec gb opcode 'c t nil))
+                       (#x1 (inst-inc-dec gb opcode 'e t nil))
+                       (#x2 (inst-inc-dec gb opcode 'l t nil))
+                       (#x3 (inst-inc-dec gb opcode 'a t nil)))
                      (unknown-instruction)))
                 ((_ #xd)
                  (if (<= op-ms4 #x3)
-                     (multiple-value-bind (name val)
-                         (select-register op-ms4 (c e l a))
-                       (log-inst gb opcode "DEC ~a" name)
-                       (let ((result (1- val)))
-                         (set-register op-ms4 (c e l a) result)
-                         (set-flags :zero (zerop result)
-                                    :sub t
-                                    :hc (< result #x0f)
-                                    :carry nil))
-                       0)
+                     (ecase op-ms4
+                       (#x0 (inst-inc-dec gb opcode 'c nil nil))
+                       (#x1 (inst-inc-dec gb opcode 'e nil nil))
+                       (#x2 (inst-inc-dec gb opcode 'l nil nil))
+                       (#x3 (inst-inc-dec gb opcode 'a nil nil)))
                      (unknown-instruction)))
                 ((_ #xe)
                  (if (<= op-ms4 #x3)
