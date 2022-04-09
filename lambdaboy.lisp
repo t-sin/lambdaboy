@@ -567,6 +567,35 @@
                    :carry (minusp result)))))
   1)
 
+(defun inst-or (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (progn
+        (log-inst gb opcode "OR ~a" name)
+        (let ((result (logior (register-a reg) val)))
+          (setf (register-a reg) result)
+          (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil)))))
+  1)
+
+(defun inst-cp (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (log-inst gb opcode "CP ~a" name)
+      (let ((result (- (register-a reg) val)))
+        (set-flags reg :zero (zerop result)
+                   :sub t
+                   :hc (> result #x0f)
+                   :carry (minusp result)))))
+  1)
+
 ;;;; execution
 
 (defmacro 4bit-case ((ms4 ls4) &body clauses)
@@ -775,23 +804,9 @@
                      (inst-and gb opcode)
                      (inst-xor gb opcode)))
                 ((#xb _)
-                 (multiple-value-bind (name val)
-                     (select-register (logand #x7 op-ls4)
-                                      (b c d e h l (hl) a))
-                   (if (zerop (logand #x8 op-ls4))
-                       (progn
-                         (log-inst gb opcode "OR ~a" name)
-                         (let ((result (logior (register-a reg) val)))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil)))
-                       (progn
-                         (log-inst gb opcode "CP ~a" name)
-                         (let ((result (- (register-a reg) val)))
-                           (set-flags reg :zero (zerop result)
-                                      :sub t
-                                      :hc (> result #x0f)
-                                      :carry (minusp result)))))
-                   0))
+                 (if (zerop (logand #x8 op-ls4))
+                     (inst-or gb opcode)
+                     (inst-cp gb opcode)))
                 ((_ #x0)
                  (case op-ms4
                    (#xc (inst-ret gb opcode :non-zero))
