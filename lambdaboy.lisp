@@ -474,6 +474,39 @@
                        :carry nil)))))
   1)
 
+(defun inst-add (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (log-inst gb opcode "ADD A, ~a" name)
+      (let ((result (+ (register-a reg) val)))
+        (setf (register-a reg) result)
+        (set-flags reg :zero (zerop result)
+                   :sub nil
+                   :hc (> result #xf))
+        :carry (> result #xff))))
+  1)
+
+(defun inst-adc (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (log-inst gb opcode "ADC A, ~a" name)
+      (let ((result (+ (register-a reg) val
+                       (if (register-flag-carry reg) 1 0))))
+        (setf (register-a reg) result)
+        (set-flags reg :zero (zerop result)
+                   :sub nil
+                   :hc (> result #xf))
+        :carry (> result #xff))))
+  1)
+
 (defun inst-and (gb opcode)
   (let* ((reg (gameboy-register gb))
          (mem (gameboy-memory gb))
@@ -730,28 +763,9 @@
                            (setf (register-a reg) val)))
                  0)
                 ((#x8 _)
-                 (multiple-value-bind (name val)
-                     (select-register (logand #x7 op-ls4)
-                                      (b c d e h l (hl) a))
-                   (if (zerop (logand #x8 op-ls4))
-                       (progn
-                         (log-inst gb opcode "ADD A, ~a" name)
-                         (let ((result (+ (register-a reg) val)))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result)
-                                      :sub nil
-                                      :hc (> result #xf))
-                                      :carry (> result #xff)))
-                       (progn
-                         (log-inst gb opcode "ADC A, ~a" name)
-                         (let ((result (+ (register-a reg) val
-                                          (if (register-flag-carry reg) 1 0))))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result)
-                                      :sub nil
-                                      :hc (> result #xf))
-                                      :carry (> result #xff))))
-                   0))
+                 (if (zerop (logand #x8 op-ls4))
+                     (inst-add gb opcode)
+                     (inst-adc gb opcode)))
                 ((#x9 _)
                  (if (zerop (logand #x8 op-ls4))
                      (inst-sub gb opcode)
