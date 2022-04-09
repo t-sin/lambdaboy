@@ -474,6 +474,66 @@
                        :carry nil)))))
   1)
 
+(defun inst-and (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (log-inst gb opcode "AND ~a" name)
+      (let ((result (logand (register-a reg) val)))
+        (setf (register-a reg) result)
+        (set-flags reg :zero (zerop result) :sub nil :hc t :carry nil))))
+  1)
+
+(defun inst-xor (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (progn
+        (log-inst gb opcode "XOR ~a" name)
+        (let ((result (logxor (register-a reg) val)))
+          (setf (register-a reg) result)
+          (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil)))))
+  1)
+
+(defun inst-sub (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (log-inst gb opcode "SUB A, ~a" name)
+      (let ((result (- (register-a reg) val)))
+        (setf (register-a reg) result)
+        (set-flags reg :zero (zerop result)
+                   :sub t
+                   :hc (< result #xf)
+                   :carry (minusp result)))))
+  1)
+
+(defun inst-sbc (gb opcode)
+  (let* ((reg (gameboy-register gb))
+         (mem (gameboy-memory gb))
+         (op-ls3 (logand #x7 opcode)))
+    (multiple-value-bind (name val)
+        (select-register op-ls3
+                         (b c d e h l (hl) a))
+      (log-inst gb opcode "SBC A, ~a" name)
+      (let ((result (- (register-a reg) val
+                       (if (register-flag-carry reg) 1 0))))
+        (setf (register-a reg) result)
+        (set-flags reg :zero (zerop result)
+                   :sub t
+                   :hc (< result #xf)
+                   :carry (minusp result)))))
+  1)
+
 ;;;; execution
 
 (defmacro 4bit-case ((ms4 ls4) &body clauses)
@@ -693,44 +753,13 @@
                                       :carry (> result #xff))))
                    0))
                 ((#x9 _)
-                 (multiple-value-bind (name val)
-                     (select-register (logand #x7 op-ls4)
-                                      (b c d e h l (hl) a))
-                   (if (zerop (logand #x8 op-ls4))
-                       (progn
-                         (log-inst gb opcode "SUB A, ~a" name)
-                         (let ((result (- (register-a reg) val)))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result)
-                                      :sub t
-                                      :hc (< result #xf))
-                                      :carry (minusp result)))
-                       (progn
-                         (log-inst gb opcode "SBC A, ~a" name)
-                         (let ((result (- (register-a reg) val
-                                          (if (register-flag-carry reg) 1 0))))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result)
-                                      :sub t
-                                      :hc (< result #xf))
-                                      :carry (minusp result))))
-                   0))
+                 (if (zerop (logand #x8 op-ls4))
+                     (inst-sub gb opcode)
+                     (inst-sbc gb opcode)))
                 ((#xa _)
-                 (multiple-value-bind (name val)
-                     (select-register (logand #x7 op-ls4)
-                                      (b c d e h l (hl) a))
-                   (if (zerop (logand #x8 op-ls4))
-                       (progn
-                         (log-inst gb opcode "AND ~a" name)
-                         (let ((result (logand (register-a reg) val)))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result) :sub nil :hc t :carry nil)))
-                       (progn
-                         (log-inst gb opcode "XOR ~a" name)
-                         (let ((result (logxor (register-a reg) val)))
-                           (setf (register-a reg) result)
-                           (set-flags reg :zero (zerop result) :sub nil :hc nil :carry nil))))
-                   0))
+                 (if (zerop (logand #x8 op-ls4))
+                     (inst-and gb opcode)
+                     (inst-xor gb opcode)))
                 ((#xb _)
                  (multiple-value-bind (name val)
                      (select-register (logand #x7 op-ls4)
